@@ -1,6 +1,13 @@
-# led.contracts
+<h1 align="center">IBCT: Ledgis Main-net Contracts</h1>
 
-## Version : 1.7.0
+<div align="center">
+
+[![Version](https://img.shields.io/badge/version-1.7.0-6fc5fb.svg)](https://github.com/ibct-dev/led.public.contracts/tree/v1.7.x/)
+[![Ledgis](https://img.shields.io/badge/led-1.8.4-010e20.svg)](https://github.com/ibct-dev/LEDGIS/tree/v1.8.4/)
+[![eosiocdt](https://img.shields.io/badge/eosiocdt-1.6.3-2ca045.svg)](https://github.com/EOSIO/eosio.cdt/tree/v1.6.3/)
+[![Language](https://img.shields.io/badge/language-C++-d80089.svg)](http://www.cplusplus.com/)
+
+</div>
 
 IBCT's Ledgis is an EOSIO-based block chain aimed at ensuring fair value for all users who provide or use quality services. To achieve this goal, IBCT has developed a consensus algorithm called DPoSS and has new policies such as buyservice. This repository contains examples of smart contracts which would be deployed to Ledgis mainnet. They are provided for reference purposes and can be changed anytime to enhance their features or fix errors.
 
