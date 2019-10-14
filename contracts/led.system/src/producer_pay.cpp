@@ -18,7 +18,7 @@ namespace eosiosystem {
             auto& prod = _producers.get( acnt.value, "producer not found" );  //data corruption
             if( prod.interval_produce_blocks < prod_interval_block_threshold ) {
                _producers.modify(prod, same_payer, [&](auto& p) {
-                  if( !p.is_punished ) p.punish();
+                  if( !p.is_punished ) punish(acnt);
                   p.demerit++;
                });
             }

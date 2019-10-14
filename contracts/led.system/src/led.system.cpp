@@ -379,4 +379,26 @@ namespace eosiosystem {
       const auto suffix = owner.suffix();
       return "p"_n == suffix;
    }
+
+   void system_contract::punish( const name& producer ) {
+      auto prod = _producers.find( producer.value );
+      check( prod != _producers.end(), "target producer is not exist" );
+      check( !prod->punished(), "producer is already punished" );
+      
+      _producers.modify( prod, same_payer, [&]( producer_info& info ) {
+         info.punish();
+      });
+
+      if(prod->producer_type == 1) {
+         auto fitr = _frontiers.find( producer.value );
+         _frontiers.modify( fitr, same_payer, [&]( frontier_info& info ) {
+            info.is_active = false;
+         });
+      } else {
+         auto iitr = _interiors.find( producer.value );
+         _interiors.modify( iitr, same_payer, [&]( interior_info& info ) {
+            info.is_active = false;
+         });
+      }
+   }
 } /// eosio.system

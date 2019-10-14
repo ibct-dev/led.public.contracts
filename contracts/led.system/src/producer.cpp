@@ -333,7 +333,7 @@ namespace eosiosystem {
       auto sym = fitr->transfer_ratio.symbol.code();
       accounts fromAccount(token_account, frontier.value);
       const auto& ac = fromAccount.get(sym.raw(), "frontier does not have a dapp token symbol");
-      auto payment_token = asset(static_cast<int64_t>((double)fitr->transfer_ratio.amount * (quantity.amount / 10000)), fitr->transfer_ratio.symbol);
+      auto payment_token = asset(static_cast<int64_t>((double)fitr->transfer_ratio.amount * quantity.amount) / 10000, fitr->transfer_ratio.symbol);
       check( payment_token.amount <= ac.balance.amount, "There is not enough DAPP tokens to transfer");
 
       // frontier에게 service fee 송금
@@ -379,9 +379,8 @@ namespace eosiosystem {
          _frontiers.modify( fitr, frontier, [&]( frontier_info& info ){
             info.buyers.push_back( buyer );
          });
-
-         _gstate.total_purchase_amount += quantity.amount;
       }
+      _gstate.total_purchase_amount += quantity.amount;
    }
 
    void system_contract::voteproducer( const name& voter, const name& proxy, const std::vector<name>& interiors ) {
@@ -575,7 +574,6 @@ namespace eosiosystem {
             auto delta = new_weight - voter.last_vote_weight;
             for ( auto acnt : voter.interiors ) {
                auto& iitr = _interiors.get( acnt.value, "interior not found" ); //data corruption
-               const double init_vote_weights = iitr.vote_weights;
                _interiors.modify( iitr, same_payer, [&]( auto& i ) {
                      i.vote_weights += delta;
                      _gstate.total_interior_vote_weight += delta;
