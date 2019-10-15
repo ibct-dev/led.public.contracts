@@ -47,6 +47,9 @@ class[[eosio::contract("led.forum")]] forum : public contract {
     [[eosio::action]]    
     void clnproposal(const name proposal_name, uint64_t max_count);
 
+    [[eosio::action]]
+    void pasproposal(const name proposal_name);
+
    private:
     // 3 days in seconds (Computation: 3 days * 24 hours * 60 minutes * 60 seconds)
     constexpr static uint32_t FREEZE_PERIOD_IN_SECONDS = 3; // test 3 * 24 * 60 * 60;
@@ -75,10 +78,10 @@ class[[eosio::contract("led.forum")]] forum : public contract {
         time_point_sec expires_at;
         int64_t count_agree = 0;
         int64_t count_disagree = 0;
+        bool pass = false;
 
         auto primary_key() const { return proposal_name.value; }
         uint64_t by_proposer() const { return proposer.value; }
-
         bool is_expired() const { return current_time_point_sec() >= expires_at; }
         bool can_be_cleaned_up() const { return current_time_point_sec() > (expires_at + FREEZE_PERIOD_IN_SECONDS); }
     };
@@ -105,17 +108,6 @@ class[[eosio::contract("led.forum")]] forum : public contract {
         indexed_by<"byvoter"_n, const_mem_fun<vote_row, uint128_t, &vote_row::by_voter>>>
         votes;
 
-    struct [[eosio::table]] agree_proposal {
-        name proposal_name;
-        name proposer;
-        string title;
-        string proposal_json;
-        time_point_sec created_at;
-        time_point_sec expires_at;
-        auto primary_key() const { return proposal_name.value; }
-    };
-    typedef eosio::multi_index<"agreed"_n, agree_proposal> agreed;
-
     void update_vote(
         votes & vote_table,
         const name proposal_name,
@@ -129,9 +121,6 @@ class[[eosio::contract("led.forum")]] forum : public contract {
         size_t max_size,
         const char* not_object_message,
         const char* over_size_message);
-    
-    void veridate_agree(
-        const name proposal_name);
     
     bool isKYC( const name& owner );
 };
