@@ -961,7 +961,7 @@ namespace eosiosystem {
       const uint32_t num_of_maturity_buckets = 5;       // <TEST> REX 테스트용 default 5
       static const uint32_t now = current_time_point().sec_since_epoch();
       static const uint32_t r   = now % seconds_per_day;
-      static const time_point_sec rms{ now - r + num_of_maturity_buckets * (seconds_per_day / 24 / 10) };          // <TEST> REX 테스트용 default seconds_per_day -> (seconds_per_day / 24 / 10)
+      static const time_point_sec rms{ now - r + num_of_maturity_buckets * (seconds_per_day) };          // <TEST> REX 테스트용 default seconds_per_day -> (seconds_per_day / 24 / 10)
       return rms;
    }
 

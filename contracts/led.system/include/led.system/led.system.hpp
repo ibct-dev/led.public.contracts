@@ -68,6 +68,34 @@ namespace eosiosystem {
 
    static constexpr uint32_t refund_delay_sec      = 3 * seconds_per_day;
 
+   template <typename T>
+   int32_t remove_secondary_index( uint64_t code, uint64_t scope, uint64_t table ) {
+      using namespace eosio::_multi_index_detail;
+
+      uint64_t pk;
+
+      auto min = secondary_key_traits<T>::lowest();
+      auto itr = secondary_index_db_functions<T>::db_idx_lowerbound( code, scope, table, min, pk );
+
+      // itr == -1, no secondary index
+      // itr < -1, type mismatch
+      if( itr <= -1 ) return itr;
+
+      while( itr > -1 ) {
+         auto next_itr = secondary_index_db_functions<T>::db_idx_next( itr, &pk );
+         secondary_index_db_functions<T>::db_idx_remove( itr );
+         itr = next_itr;
+      }
+
+      // secondary index is removed
+      return 0;
+   }
+
+#define REMOVE_SECONDARY_INDEX( ITR, TYPE, CODE, SCOPE, TABLE ) \
+   ITR = remove_secondary_index<TYPE>( CODE, SCOPE, TABLE ); \
+   if ( ITR == -1 ) break; \
+   else if ( ITR == 0 ) continue;
+
    struct [[eosio::table("global"), eosio::contract("led.system")]] legis_global_state : eosio::blockchain_parameters {
       uint64_t free_ram()const { return max_ram_size - total_ram_bytes_reserved; }
 
@@ -831,6 +859,7 @@ namespace eosiosystem {
          void update_ram_supply();
          bool isCompany( const name& owner );
          bool isPerson( const name& owner );
+         void punish( const name& owner );
 
          // defined in rex.cpp
          void runrex( uint16_t max );

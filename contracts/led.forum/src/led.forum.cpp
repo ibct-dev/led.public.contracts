@@ -39,6 +39,7 @@ namespace eosio {
             row.proposal_json = proposal_json;
             row.created_at = current_time_point_sec();
             row.expires_at = expires_at;
+            row.pass = false;
         });
     }
 
@@ -98,6 +99,17 @@ namespace eosio {
         auto itr = index.find(vote_key);
         check(itr != index.end(), "no vote exists for this proposal_name/voter pair.");
 
+        auto itr1 = proposal_table.find(proposal_name.value);
+        if(itr->vote){
+            proposal_table.modify(itr1, same_payer, [&](auto& row) {
+                row.count_agree--;
+            });
+        } else {
+            proposal_table.modify(itr1, same_payer, [&](auto& row) {
+                row.count_disagree--;
+            });
+        }
+
         vote_table.erase(*itr);
     }
 
@@ -117,8 +129,6 @@ namespace eosio {
         auto itr = proposal_table.find(proposal_name.value);
         check(itr == proposal_table.end() || itr->can_be_cleaned_up(),
             "proposal must not exist or be expired for at least 3 days prior to running clnproposal.");
-
-        veridate_agree(proposal_name);
 
         votes vote_table(_self, _self.value);
         auto index = vote_table.template get_index<"byproposal"_n>();
@@ -191,6 +201,18 @@ namespace eosio {
         }
     }
 
+    void forum::pasproposal(const name proposal_name){
+        require_auth("ibct"_n);
+
+        proposals proposal_table(_self, _self.value);
+        auto itr = proposal_table.find(proposal_name.value);
+        check(itr != proposal_table.end(), "proposal must exist");
+
+        proposal_table.modify(itr, same_payer, [&](auto& row) {
+            row.pass = true;
+        });
+    }
+
     // Do not use directly, use the VALIDATE_JSON macro instead!
     void forum::validate_json(
         const string& payload,
@@ -204,34 +226,10 @@ namespace eosio {
         check(payload.size() < max_size, over_size_message);
     }
 
-    void forum::veridate_agree(const name proposal_name){
-        proposals proposal_table(_self, _self.value);
-        auto itr = proposal_table.find(proposal_name.value);
-        int64_t agree_count = itr->count_agree;
-        int64_t disagree_count = itr->count_disagree;
-        
-        int64_t total_count = agree_count + disagree_count;
-        int64_t total_number_of_KYC = 3;
-
-        if(( total_count / total_number_of_KYC ) >= 0.15 ) {
-            if((agree_count / total_count) >= 0.67 ){
-                agreed agreed_table(_self, _self.value);
-                agreed_table.emplace(_self, [&](auto& row) {
-                    row.proposal_name = proposal_name;
-                    row.proposer = itr->proposer;
-                    row.title = itr->title;
-                    row.proposal_json = itr->proposal_json;
-                    row.created_at = itr->created_at;
-                    row.expires_at = itr->expires_at;
-                });
-            }
-        }
-    }
-
     bool forum::isKYC( const name& owner ) {
         const auto suffix = owner.suffix();
         return ("c"_n == suffix || "p"_n == suffix);
     }
 }  // namespace eosio
 
-EOSIO_DISPATCH(eosio::forum, (propose)(expire)(vote)(unvote)(clnproposal))
+EOSIO_DISPATCH(eosio::forum, (propose)(expire)(vote)(unvote)(clnproposal)(pasproposal))
