@@ -7,7 +7,8 @@
 #include <eosio/system.hpp>
 #include <eosio/time.hpp>
 
-namespace eosio {
+namespace eosio
+{
 
 using eosio::check;
 using eosio::const_mem_fun;
@@ -19,57 +20,53 @@ using eosio::time_point_sec;
 using std::function;
 using std::string;
 
-class[[eosio::contract("led.forum")]] forum : public contract {
-   public:
+class[[eosio::contract("led.forum")]] forum : public contract
+{
+public:
     using contract::contract;
 
-    [[eosio::action]]    
-    void propose(
+    [[eosio::action]] void propose(
         const name proposer,
         const name proposal_name,
-        const string& title,
-        const string& proposal_json,
-        const time_point_sec& expires_at);
+        const string &title,
+        const string &proposal_json,
+        const time_point_sec &expires_at);
 
-    [[eosio::action]]    
-    void expire(const name proposal_name);
+    [[eosio::action]] void expire(const name proposal_name);
 
-    [[eosio::action]]    
-    void vote(
+    [[eosio::action]] void vote(
         const name voter,
         const name proposal_name,
         uint8_t vote,
-        const string& vote_json);
+        const string &vote_json);
 
-    [[eosio::action]]    
-    void unvote(const name voter, const name proposal_name);
+    [[eosio::action]] void unvote(const name voter, const name proposal_name);
 
-    [[eosio::action]]    
-    void clnproposal(const name proposal_name, uint64_t max_count);
+    [[eosio::action]] void clnproposal(const name proposal_name);
 
-    [[eosio::action]]
-    void pasproposal(const name proposal_name);
+    [[eosio::action]] void pasproposal(const name proposal_name);
 
-   private:
-    // 3 days in seconds (Computation: 3 days * 24 hours * 60 minutes * 60 seconds)
-    constexpr static uint32_t FREEZE_PERIOD_IN_SECONDS = 3; // test 3 * 24 * 60 * 60;
-
+private:
     // 6 months in seconds (Computatio: 6 months * average days per month * 24 hours * 60 minutes * 60 seconds)
     constexpr static uint32_t SIX_MONTHS_IN_SECONDS = (uint32_t)(6 * (365.25 / 12) * 24 * 60 * 60);
 
-    static inline time_point_sec current_time_point_sec() {
+    static inline time_point_sec current_time_point_sec()
+    {
         return time_point_sec(current_time_point());
     }
 
-    static uint128_t compute_by_proposal_key(const name proposal_name, const name voter) {
+    static uint128_t compute_by_proposal_key(const name proposal_name, const name voter)
+    {
         return ((uint128_t)proposal_name.value) << 64 | voter.value;
     }
 
-    static uint128_t compute_by_voter_key(const name proposal_name, const name voter) {
+    static uint128_t compute_by_voter_key(const name proposal_name, const name voter)
+    {
         return ((uint128_t)voter.value) << 64 | proposal_name.value;
     }
 
-    struct [[eosio::table]] proposal_row {
+    struct [[eosio::table]] proposal_row
+    {
         name proposal_name;
         name proposer;
         string title;
@@ -83,14 +80,14 @@ class[[eosio::contract("led.forum")]] forum : public contract {
         auto primary_key() const { return proposal_name.value; }
         uint64_t by_proposer() const { return proposer.value; }
         bool is_expired() const { return current_time_point_sec() >= expires_at; }
-        bool can_be_cleaned_up() const { return current_time_point_sec() > (expires_at + FREEZE_PERIOD_IN_SECONDS); }
     };
     typedef eosio::multi_index<
         "proposal"_n, proposal_row,
         indexed_by<"byproposer"_n, const_mem_fun<proposal_row, uint64_t, &proposal_row::by_proposer>>>
         proposals;
 
-    struct [[eosio::table]] vote_row {
+    struct [[eosio::table]] vote_row
+    {
         uint64_t id;
         name proposal_name;
         name voter;
@@ -113,16 +110,16 @@ class[[eosio::contract("led.forum")]] forum : public contract {
         const name proposal_name,
         const name voter,
         uint8_t vote,
-        const function<void(vote_row&)> updater);
+        const function<void(vote_row &)> updater);
 
     // Do not use directly, use the VALIDATE_JSON macro instead!
     void validate_json(
-        const string& payload,
+        const string &payload,
         size_t max_size,
-        const char* not_object_message,
-        const char* over_size_message);
-    
-    bool isKYC( const name& owner );
+        const char *not_object_message,
+        const char *over_size_message);
+
+    bool isKYC(const name &owner);
 };
 
-}  // namespace eosio
+} // namespace eosio
