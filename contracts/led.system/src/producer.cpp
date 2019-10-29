@@ -95,7 +95,9 @@ namespace eosiosystem {
          });
          _frontiers.modify( fitr, frontier, [&]( frontier_info& info ){
             info.is_active       = true;
+            info.url             = url;
             info.category        = category;
+            info.logo_256        = logo_256;
             info.transfer_ratio  = asset(transfer_ratio);
          });
       } else {
@@ -115,7 +117,9 @@ namespace eosiosystem {
             info.owner           = frontier;
             info.is_active       = true;
             info.service_weights = 0;
+            info.url             = url;
             info.category        = category;
+            info.logo_256        = logo_256;
             info.transfer_ratio  = asset(transfer_ratio);
          });
       }
@@ -146,7 +150,9 @@ namespace eosiosystem {
          });
          _interiors.modify( iitr, interior, [&]( interior_info& info ){
             info.is_active             = true;
+            info.url                   = url;
             info.election_promise      = election_promise;
+            info.logo_256              = logo_256;
          });
       } else {
          _producers.emplace( interior, [&]( producer_info& info ){
@@ -165,7 +171,9 @@ namespace eosiosystem {
             info.owner            = interior;
             info.is_active        = true;
             info.vote_weights     = 0;
+            info.url              = url;
             info.election_promise = election_promise;
+            info.logo_256         = logo_256;
          });
       }
    }

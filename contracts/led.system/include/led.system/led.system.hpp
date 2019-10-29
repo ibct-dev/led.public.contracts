@@ -185,7 +185,9 @@ namespace eosiosystem {
       bool                    is_active;
       eosio::asset            transfer_ratio;
       double                  service_weights = 0;
+      std::string             url;
       uint8_t                 category;
+      std::string             logo_256;
 
       std::vector<name>       buyers;
       std::vector<double>     service_weight_window;
@@ -227,13 +229,15 @@ namespace eosiosystem {
          }
          privIdx = idx;
       }
-      EOSLIB_SERIALIZE( frontier_info, (owner)(is_active)(transfer_ratio)(service_weights)(category)(buyers)(service_weight_window)(service_weight_window_date)(service_window_state)(privIdx)(decrease_service_weight) )
+      EOSLIB_SERIALIZE( frontier_info, (owner)(is_active)(transfer_ratio)(service_weights)(url)(category)(logo_256)(buyers)(service_weight_window)(service_weight_window_date)(service_window_state)(privIdx)(decrease_service_weight) )
    };
 
    struct [[eosio::table, eosio::contract("led.system")]] interior_info {
       name            owner;
       bool            is_active;
+      std::string     url;
       std::string     election_promise;
+      std::string     logo_256;
 
       double          vote_weights = 0;
 
@@ -242,7 +246,7 @@ namespace eosiosystem {
       double   by_votes()const    { return is_active ? -vote_weights : vote_weights; }
 
       // explicit serialization macro is not necessary, used here only to improve compilation time
-      EOSLIB_SERIALIZE( interior_info, (owner)(is_active)(election_promise)(vote_weights) )
+      EOSLIB_SERIALIZE( interior_info, (owner)(is_active)(url)(election_promise)(logo_256)(vote_weights) )
    };
 
    struct [[eosio::table, eosio::contract("led.system")]] buyer_info {
