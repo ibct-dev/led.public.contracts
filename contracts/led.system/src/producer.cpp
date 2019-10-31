@@ -420,7 +420,10 @@ namespace eosiosystem {
       auto new_vote_weight = stake2vote( voter->staked );
       int64_t new_staked = voter->staked;
       
-      {
+      if (!interoirs.size() && !proxy) {
+         _gstate.total_vote_amount -= voter->last_vote;
+         new_staked = 0;
+      } else {
          _gstate.total_vote_amount -= voter->last_vote;
          _gstate.total_vote_amount += new_staked;
       }
