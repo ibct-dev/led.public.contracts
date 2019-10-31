@@ -6,6 +6,7 @@
 
 #include <eosio/chain/abi_serializer.hpp>
 #include <eosio/testing/tester.hpp>
+#include <eosio/chain/resource_limits.hpp>
 #include "contracts.hpp"
 #include "test_symbol.hpp"
 
@@ -747,7 +748,8 @@ public:
         return data.empty() ? fc::variant() : abi_ser.binary_to_variant("refund_request", data, abi_serializer_max_time);
     }
 
-    void active_and_pass_time(){
+    void active_and_pass_time()
+    {
         activate();
         produce_block(fc::seconds(52 * 7 * 24 * 3600 / 2));
         produce_blocks();
