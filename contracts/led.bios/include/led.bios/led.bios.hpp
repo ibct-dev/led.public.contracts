@@ -66,7 +66,7 @@ namespace eosiobios {
                           action_mroot)(schedule_version)(new_producers))
    };
 
-   class [[eosio::contract("led.bios")]] bios : public contract {
+   class [[eosio::contract("led.bios")]] bios : public eosio::contract {
     public:
       using contract::contract;
       [[eosio::action]] void newaccount(name creator, name name, ignore<authority> owner,
