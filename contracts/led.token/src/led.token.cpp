@@ -605,7 +605,6 @@ namespace eosio {
         check_frozen( auctioneer );
 
         require_recipient(auctioneer);
-        require_recipient(get_self());
 
         asset as(0, symbol(symbol_code(sym.c_str()), 0));
         auto symbol = as.symbol;
@@ -645,6 +644,8 @@ namespace eosio {
     ACTION token::bidtoken( const name& bidder, const string& sym, id_type token_id, const asset& bid ) {
         require_auth(bidder);
         check_frozen( bidder );
+
+        require_recipient(bidder);
 
         asset as(0, symbol(symbol_code(sym.c_str()), 0));
         auto symbol = as.symbol;
@@ -690,6 +691,8 @@ namespace eosio {
     ACTION token::claimtoken( const name& requester, const string& sym, id_type token_id ) {
         require_auth(requester);
         check_frozen( requester );
+
+        require_recipient(requester);
 
         asset as(0, symbol(symbol_code(sym.c_str()), 0));
         auto symbol = as.symbol;
@@ -738,6 +741,8 @@ namespace eosio {
             require_auth(get_self());
         }
 
+        require_recipient(account);
+
         frozens frozentable( get_self(), get_self().value );
         auto fitr = frozentable.find( account.value );
         check( fitr == frozentable.end(), "account is already frozen" );
@@ -754,6 +759,8 @@ namespace eosio {
         else {
             require_auth(get_self());
         }
+
+        require_recipient(account);
 
         frozens frozentable( get_self(), get_self().value );
         auto fitr = frozentable.find( account.value );
