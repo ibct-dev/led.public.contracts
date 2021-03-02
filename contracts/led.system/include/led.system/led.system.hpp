@@ -200,7 +200,13 @@ namespace eosiosystem {
       bool     active()const                       { return is_active;                                                      }
       double   by_services()const                  { return is_active ? -service_weights : service_weights;                 }
       bool     buyer_exists(const name buyer)const { return std::find(buyers.begin(), buyers.end(), buyer) != buyers.end(); }
-      void     clear_buyers()                      { if( !buyers.empty() ) buyers.clear();                                  }
+      void     clear_buyers() {
+         if( buyers.size() ) {
+            for(auto itr == buyers.begin(); itr != buyers.end();) {
+               itr = buyers.erase(itr);
+            }
+         }
+      }
       void     set_service_weight(double weight)   {
          if(!service_weight_window.size()) service_weight_window.resize(30);
          if(!service_weight_window_date.size()) service_weight_window_date.resize(30);
