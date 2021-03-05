@@ -202,7 +202,7 @@ namespace eosiosystem {
       bool     buyer_exists(const name buyer)const { return std::find(buyers.begin(), buyers.end(), buyer) != buyers.end(); }
       void     clear_buyers() {
          if( buyers.size() ) {
-            for(auto itr == buyers.begin(); itr != buyers.end();) {
+            for(auto itr = buyers.begin(); itr != buyers.end();) {
                itr = buyers.erase(itr);
             }
          }
