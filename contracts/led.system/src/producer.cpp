@@ -221,6 +221,7 @@ namespace eosiosystem {
    }
 
    void system_contract::update_elected_producers( const block_timestamp& block_time ) {
+      bool isclear = false;
       _gstate.last_producer_schedule_update = block_time;
 
       if ((block_time.slot - _gstate2.last_frontier_service_table_update.slot) > blocks_per_day){
@@ -234,13 +235,16 @@ namespace eosiosystem {
                   info.decrease_service_weight = 0;
                }
                if ((block_time.slot - _gstate2.last_frontier_buyer_table_clear_time.slot) > blocks_per_week * 4){
-                  _gstate2.last_frontier_buyer_table_clear_time = block_time;
+                  isclear = true;
                   info.clear_buyers();
                }
             });
          }
+         if(isclear){
+            _gstate2.last_frontier_buyer_table_clear_time = block_time;
+         }
       }
-
+      
       if (((block_time.slot - _gstate.last_producer_size_update.slot) > (blocks_per_year / 2)) && _gstate.maximum_producers != 21){
          _gstate.last_producer_size_update = block_time;
          _gstate.maximum_producers += 6;
