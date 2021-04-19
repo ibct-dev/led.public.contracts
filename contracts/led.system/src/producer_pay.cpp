@@ -128,8 +128,7 @@ namespace eosiosystem {
             transfer_act.send(get_self(), cpay_account, asset(to_per_ctb_pay, core_symbol()), "fund per-ctb bucket");
             transfer_act.send(get_self(), vpay_account, asset(to_per_vote_pay, core_symbol()), "fund per-vote bucket");
          }
-         channel_to_rex(rexpay_account, asset(to_rexpool, core_symbol()));
-
+         
          _gstate.perblock_bucket += to_per_block_pay;
          _gstate.perctb_bucket   += to_per_ctb_pay;
          _gstate.pervote_bucket  += to_per_vote_pay;
