@@ -1024,12 +1024,12 @@ try
 {
     create_accounts_with_resources({N(defproducer1), N(frontier1.c)});
     BOOST_REQUIRE_EQUAL(success(), activate());
-    issue("led", core_sym::from_string("4000.0000"), config::system_account_name);
-    transfer("led", "alice.p", core_sym::from_string("1000.0000"), "led");
-    transfer("led", "bob.p", core_sym::from_string("1000.0000"), "led");
-    transfer("led", "carol.p", core_sym::from_string("1000.0000"), "led");
-    transfer("led", "defproducer1", core_sym::from_string("500.0000"), "led");
-    transfer("led", "frontier1.c", core_sym::from_string("500.0000"), "led");
+    issue("led", core_sym::from_string("40000.0000"), config::system_account_name);
+    transfer("led", "alice.p", core_sym::from_string("10000.0000"), "led");
+    transfer("led", "bob.p", core_sym::from_string("10000.0000"), "led");
+    transfer("led", "carol.p", core_sym::from_string("10000.0000"), "led");
+    transfer("led", "defproducer1", core_sym::from_string("5000.0000"), "led");
+    transfer("led", "frontier1.c", core_sym::from_string("5000.0000"), "led");
 
     // check inital staked amount
     auto gstate = get_global_state();
@@ -1068,7 +1068,7 @@ try
     BOOST_REQUIRE_EQUAL(success(), regfrontier("frontier1.c", ratio, 1));
 
     // buyservice to frontier1.c
-    auto amount = asset(1000000, symbol{CORE_SYMBOL});
+    auto amount = core_sym::from_string("100.0000");
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, N(frontier1.c)));
     gstate = get_global_state();
     BOOST_REQUIRE_EQUAL(1000000, gstate["total_purchase_amount"].as_int64());
@@ -1144,7 +1144,7 @@ try
 
     issue("led", core_sym::from_string("1000.0000"), config::system_account_name);
     transfer("led", "alice.p", core_sym::from_string("1000.0000"), "led");
-    auto amount = asset(1000000, symbol{CORE_SYMBOL});
+    auto amount = core_sym::from_string("100.0000");
 
     //user must stake before buyservice
     BOOST_REQUIRE_EQUAL(wasm_assert_msg("user must stake before they can buy"), buyservice(N(alice.p), amount, acnt));
@@ -1181,26 +1181,26 @@ try
     BOOST_REQUIRE_EQUAL(1, buyers.size());
 
     // check small amount
-    amount = asset(1001000, symbol{CORE_SYMBOL});
+    amount = core_sym::from_string("100.1000");
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, acnt));
     core_symbol_balance = get_balance(N(alice.p));
     test_symbol_balance = get_balance(N(alice.p), sym_name);
     BOOST_REQUIRE_EQUAL(6949000, core_symbol_balance.get_amount());
     BOOST_REQUIRE_EQUAL(450150, test_symbol_balance.get_amount());
 
-    amount = asset(1000100, symbol{CORE_SYMBOL});
+    amount = core_sym::from_string("100.1000");
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, acnt));
     core_symbol_balance = get_balance(N(alice.p));
     test_symbol_balance = get_balance(N(alice.p), sym_name);
-    BOOST_REQUIRE_EQUAL(5948900, core_symbol_balance.get_amount());
-    BOOST_REQUIRE_EQUAL(600165, test_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(5948000, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(600300, test_symbol_balance.get_amount());
 
-    amount = asset(1000070, symbol{CORE_SYMBOL});
+    amount = core_sym::from_string("100.0700");
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, acnt));
     core_symbol_balance = get_balance(N(alice.p));
     test_symbol_balance = get_balance(N(alice.p), sym_name);
-    BOOST_REQUIRE_EQUAL(4948830, core_symbol_balance.get_amount());
-    BOOST_REQUIRE_EQUAL(750175, test_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(4947300, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(750405, test_symbol_balance.get_amount());
 }
 FC_LOG_AND_RETHROW()
 
@@ -1220,7 +1220,7 @@ try
 
     issue("led", core_sym::from_string("1000.0000"), config::system_account_name);
     transfer("led", "alice.p", core_sym::from_string("1000.0000"), "led");
-    auto amount = asset(1000000, symbol{CORE_SYMBOL});
+    auto amount = core_sym::from_string("100.0000");
 
     //alice stake
     BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
@@ -1280,7 +1280,7 @@ try
     transfer("led", "alice.p", core_sym::from_string("500.0000"), "led");
     transfer("led", "bob.p", core_sym::from_string("500.0000"), "led");
     transfer("led", "carol.p", core_sym::from_string("500.0000"), "led");
-    auto amount = asset(1000000, symbol{CORE_SYMBOL});
+    auto amount = core_sym::from_string("100.0000");
 
     //alice stake
     BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
@@ -1349,7 +1349,7 @@ try
     transfer("led", "alice.p", core_sym::from_string("500.0000"), "led");
     transfer("led", "bob.p", core_sym::from_string("500.0000"), "led");
     transfer("led", "carol.p", core_sym::from_string("500.0000"), "led");
-    auto amount = asset(1000000, symbol{CORE_SYMBOL});
+    auto amount = core_sym::from_string("100.0000");
 
     BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
     BOOST_REQUIRE_EQUAL(success(), stake("bob.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
@@ -1401,7 +1401,7 @@ try
     //stake and buyservice
     issue("led", core_sym::from_string("1500.0000"), config::system_account_name);
     transfer("led", "alice.p", core_sym::from_string("500.0000"), "led");
-    auto amount = asset(1000000, symbol{CORE_SYMBOL});
+    auto amount = core_sym::from_string("100.0000");
 
     BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
 
@@ -1457,7 +1457,7 @@ try
     transfer("led", "bob.p", core_sym::from_string("1500.0000"), "led");
     transfer("led", "carol.p", core_sym::from_string("1500.0000"), "led");
     transfer("led", "dave.p", core_sym::from_string("1500.0000"), "led");
-    auto amount = asset(100000, symbol{CORE_SYMBOL});
+    auto amount = core_sym::from_string("10.0000");
 
     BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
     BOOST_REQUIRE_EQUAL(success(), stake("bob.p", core_sym::from_string("500.0000"), core_sym::from_string("500.0000")));
@@ -1997,9 +1997,9 @@ try
         BOOST_REQUIRE_EQUAL(success(), vote(N(producvotera), vector<account_name>(interiors_name.begin(), interiors_name.begin() + 2)));
         BOOST_REQUIRE_EQUAL(success(), vote(N(producvoterb), vector<account_name>(interiors_name.begin(), interiors_name.begin() + 3)));
         BOOST_REQUIRE_EQUAL(success(), vote(N(producvoterc), vector<account_name>(interiors_name.begin(), interiors_name.begin() + 4)));
-        auto amount = asset(1000000, symbol{CORE_SYMBOL});
+        auto amount = core_sym::from_string("100.0000");
         BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, N(frontier1.c)));
-        amount = asset(900000, symbol{CORE_SYMBOL});
+        amount = core_sym::from_string("90.0000");
         BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, N(frontier2.c)));
         produce_blocks(250);
     }
@@ -2677,39 +2677,6 @@ try
     rlm.get_account_limits(N(alice.p), ram_bytes, net_weight, cpu_weight);
     userres = get_total_stake(N(alice.p));
     BOOST_REQUIRE_EQUAL(userres["ram_bytes"].as_uint64() + ram_gift, ram_bytes);
-}
-FC_LOG_AND_RETHROW()
-
-BOOST_FIXTURE_TEST_CASE(setabi_bios, TESTER)
-try
-{
-    abi_serializer abi_ser(fc::json::from_string((const char *)contracts::system_abi().data()).template as<abi_def>(), abi_serializer_max_time);
-    set_code(config::system_account_name, contracts::bios_wasm());
-    set_abi(config::system_account_name, contracts::bios_abi().data());
-    create_account(N(led.token));
-    set_abi(N(led.token), contracts::token_abi().data());
-    {
-        auto res = get_row_by_account(config::system_account_name, config::system_account_name, N(abihash), N(led.token));
-        _abi_hash abi_hash;
-        auto abi_hash_var = abi_ser.binary_to_variant("abi_hash", res, abi_serializer_max_time);
-        abi_serializer::from_variant(abi_hash_var, abi_hash, get_resolver(), abi_serializer_max_time);
-        auto abi = fc::raw::pack(fc::json::from_string((const char *)contracts::token_abi().data()).template as<abi_def>());
-        auto result = fc::sha256::hash((const char *)abi.data(), abi.size());
-
-        BOOST_REQUIRE(abi_hash.hash == result);
-    }
-
-    set_abi(N(led.token), contracts::system_abi().data());
-    {
-        auto res = get_row_by_account(config::system_account_name, config::system_account_name, N(abihash), N(led.token));
-        _abi_hash abi_hash;
-        auto abi_hash_var = abi_ser.binary_to_variant("abi_hash", res, abi_serializer_max_time);
-        abi_serializer::from_variant(abi_hash_var, abi_hash, get_resolver(), abi_serializer_max_time);
-        auto abi = fc::raw::pack(fc::json::from_string((const char *)contracts::system_abi().data()).template as<abi_def>());
-        auto result = fc::sha256::hash((const char *)abi.data(), abi.size());
-
-        BOOST_REQUIRE(abi_hash.hash == result);
-    }
 }
 FC_LOG_AND_RETHROW()
 
