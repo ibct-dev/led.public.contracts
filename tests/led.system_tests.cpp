@@ -1128,6 +1128,43 @@ try
 }
 FC_LOG_AND_RETHROW()
 
+BOOST_FIXTURE_TEST_CASE(frontier_changeratio, legis_system_tester)
+try
+{
+    create_accounts_with_resources({N(frontier1.c)});
+    auto ratio = asset::from_string("1.500 TEST");
+    auto sym_name = ratio.symbol_name();
+    auto maximum = asset::from_string("1000000.000 " + sym_name);
+    const account_name &acnt = N(frontier1.c);
+    base_tester::push_action(N(led.token), N(create), N(ibct), mutable_variant_object()("issuer", acnt)("maximum_supply", maximum));
+    issue("frontier1.c", maximum, acnt);
+    auto key = get_public_key(acnt, "active");
+    action_result r = push_action(acnt, N(regfrontier), mvo()("frontier", acnt)("producer_key", key)("transfer_ratio", ratio)("category", 0)("url", "https://ibct.io")("location", 0)("logo_256", "http://ibct.io"));
+    BOOST_REQUIRE_EQUAL(success(), r);
+
+    //producer_info
+    auto info = get_producer_info(acnt);
+    BOOST_REQUIRE_EQUAL(1, info["is_active"].as_double());
+    BOOST_REQUIRE_EQUAL(1, info["producer_type"].as_double());
+    BOOST_REQUIRE_EQUAL(0, info["demerit"].as_double());
+    BOOST_REQUIRE_EQUAL("http://ibct.io", info["logo_256"]);
+    BOOST_REQUIRE_EQUAL("https://ibct.io", info["url"]);
+    BOOST_REQUIRE_EQUAL(get_public_key(acnt, "active"), fc::crypto::public_key(info["producer_key"].as_string()));
+
+    //frontier_info
+    auto finfo = get_frontier_info(acnt);
+    BOOST_REQUIRE_EQUAL(0, finfo["category"].as_double());
+    BOOST_REQUIRE_EQUAL(0, finfo["service_weights"].as_double());
+    BOOST_REQUIRE_EQUAL(ratio, finfo["transfer_ratio"].as<asset>());
+
+    // change ratio
+    ratio = asset::from_string("2.000 TEST");
+    BOOST_REQUIRE_EQUAL(success(), push_action(acnt, N(changeratio), mvo()("frontier", acnt)("transfer_ratio", ratio)));
+    finfo = get_frontier_info(acnt);
+    BOOST_REQUIRE_EQUAL(ratio, finfo["transfer_ratio"].as<asset>());
+}
+FC_LOG_AND_RETHROW()
+
 BOOST_FIXTURE_TEST_CASE(buyservice_for_frontier, legis_system_tester)
 try
 {
@@ -1621,6 +1658,66 @@ try
 
     producer_keys = control->head_block_state()->active_schedule.producers;
     BOOST_REQUIRE_EQUAL(9, producer_keys.size());
+}
+FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(claimrewards_with_punished_producers, legis_system_tester)
+try
+{
+    //create account and register producer
+    create_accounts_with_resources({N(frontier1.c), N(defproducer1)});
+    BOOST_REQUIRE_EQUAL(success(), regfrontier("frontier1.c", asset::from_string("1.500 TEST"), 1));
+    BOOST_REQUIRE_EQUAL(success(), reginterior("defproducer1", 1));
+
+    // activate
+    BOOST_REQUIRE_EQUAL(success(), activate());
+
+    //stake for buyservice and vote
+    issue("led", core_sym::from_string("6000.0000"), config::system_account_name);
+    transfer("led", "alice.p", core_sym::from_string("1500.0000"), "led");
+    transfer("led", "bob.p", core_sym::from_string("1500.0000"), "led");
+    auto amount = core_sym::from_string("10.0000");
+
+    BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
+    BOOST_REQUIRE_EQUAL(success(), stake("bob.p", core_sym::from_string("500.0000"), core_sym::from_string("500.0000")));
+
+    // do buyservice
+    BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, N(frontier1.c)));
+    // vote to interiors
+    BOOST_REQUIRE_EQUAL(success(), vote(N(bob.p), {N(defproducer1)}));
+
+    produce_blocks(7000);
+
+    // punish producers
+    BOOST_REQUIRE_EQUAL(success(), push_action(N(ibct), N(punishprod), mvo()("producer", "frontier1.c")));
+    BOOST_REQUIRE_EQUAL(success(), push_action(N(ibct), N(punishprod), mvo()("producer", "defproducer1")));
+            
+    auto info = get_producer_info("frontier1.c");
+    BOOST_REQUIRE_EQUAL(1, info["is_punished"]);
+    info = get_producer_info("defproducer1");
+    BOOST_REQUIRE_EQUAL(1, info["is_punished"]);
+
+    // punished producers can't claim reward
+    BOOST_REQUIRE_EQUAL(wasm_assert_msg("producer does not have an active key"),
+                        push_action(N(frontier1.c), N(claimrewards), mvo()("owner", "frontier1.c")));
+
+    BOOST_REQUIRE_EQUAL(wasm_assert_msg("producer does not have an active key"),
+                        push_action(N(defproducer1), N(claimrewards), mvo()("owner", "defproducer1")));
+
+    BOOST_REQUIRE_EQUAL(success(), push_action(N(ibct), N(punishoff), mvo()("producer", "frontier1.c")));
+    BOOST_REQUIRE_EQUAL(success(), push_action(N(ibct), N(punishoff), mvo()("producer", "defproducer1")));
+
+    info = get_producer_info("frontier1.c");
+    BOOST_REQUIRE_EQUAL(0, info["is_punished"]);
+    info = get_producer_info("defproducer1");
+    BOOST_REQUIRE_EQUAL(0, info["is_punished"]);
+
+    // if ibct push action punishoff, producers need to register producer again
+    BOOST_REQUIRE_EQUAL(wasm_assert_msg("producer does not have an active key"),
+                        push_action(N(frontier1.c), N(claimrewards), mvo()("owner", "frontier1.c")));
+
+    BOOST_REQUIRE_EQUAL(wasm_assert_msg("producer does not have an active key"),
+                        push_action(N(defproducer1), N(claimrewards), mvo()("owner", "defproducer1")));
 }
 FC_LOG_AND_RETHROW()
 
