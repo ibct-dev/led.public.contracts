@@ -171,6 +171,7 @@ try
 
     REQUIRE_MATCHING_OBJECT(voter("alice.p", core_sym::from_string("300.0000")), get_voter_info("alice.p"));
 
+
     auto bytes = total["ram_bytes"].as_uint64();
     BOOST_REQUIRE_EQUAL(true, 0 < bytes);
 
@@ -1850,7 +1851,6 @@ try
         // defproducera is punished and tries to claim rewards but he's not on the list
         BOOST_REQUIRE_EQUAL(wasm_assert_msg("producer does not have an active key"),
                             push_action(N(defproducera), N(claimrewards), mvo()("owner", "defproducera")));
-
         BOOST_REQUIRE_EQUAL(success(), push_action(N(ibct), N(punishoff), mvo()("producer", "defproducera")));
         BOOST_REQUIRE_EQUAL(success(), reginterior(N(defproducera)));
         BOOST_REQUIRE_EQUAL(success(), vote(N(alice.p), {N(defproducera)}));
@@ -2846,108 +2846,66 @@ try
 }
 FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(account_weight_test, legis_system_tester)
+BOOST_FIXTURE_TEST_CASE(bp_inflation_test, legis_system_tester, *boost::unit_test::tolerance(1e-10))
 try {
-    // equal weight and threshold
-    auto key = get_public_key(config::system_account_name, "active");
-    TESTER::push_action(config::system_account_name, updateauth::get_name(), config::system_account_name, mvo()("account", name(config::system_account_name).to_string())("permission", name(config::active_name).to_string())("parent", name(config::owner_name).to_string())("auth", authority(1, {key_weight{key, 1}}, {permission_level_weight{{config::system_account_name, config::eosio_code_name}, 1}, permission_level_weight{{config::producers_account_name, config::active_name}, 1}})));
+    const double continuous_rate = 1.980 / 100;
+    const double usecs_per_year = 52 * 7 * 24 * 3600 * 1000000ll;
 
-    // transfer led to alice.p
-    transfer(config::system_account_name, N(alice.p), core_sym::from_string("20.0000"), "led");
-    BOOST_REQUIRE_EQUAL(core_sym::from_string("20.0000"), get_balance("alice.p"));
+    const asset large_asset = core_sym::from_string("80.0000");
 
-    // more weight than threshold <- must be success
-    TESTER::push_action(config::system_account_name, updateauth::get_name(), config::system_account_name, mvo()("account", name(config::system_account_name).to_string())("permission", name(config::active_name).to_string())("parent", name(config::owner_name).to_string())("auth", authority(1, {key_weight{key, 10}}, {permission_level_weight{{config::system_account_name, config::eosio_code_name}, 1}, permission_level_weight{{config::producers_account_name, config::active_name}, 10}})));
+    // 계정 생성 및 bp 후보 생성
+    create_account_with_resources(N(defproducer), config::system_account_name, core_sym::from_string("1.0000"), false, large_asset, large_asset);
 
-    // transfer led to alice.p
-    transfer(config::system_account_name, N(alice.p), core_sym::from_string("10.0000"), "led");
-    BOOST_REQUIRE_EQUAL(core_sym::from_string("30.0000"), get_balance("alice.p"));
+    BOOST_REQUIRE_EQUAL(success(), reginterior("defproducer"));
+    produce_block(fc::hours(24));
 
-    // less weight than threshold <- must be fail
-    TESTER::push_action(config::system_account_name, updateauth::get_name(), config::system_account_name, mvo()("account", name(config::system_account_name).to_string())("permission", name(config::active_name).to_string())("parent", name(config::owner_name).to_string())("auth", authority(20, {key_weight{key, 10}}, {permission_level_weight{{config::system_account_name, config::eosio_code_name}, 1}, permission_level_weight{{config::producers_account_name, config::active_name}, 10}})));
-    
-    // transfer led to alice.p
-    // BOOST_REQUIRE_EXCEPTION(transfer(config::system_account_name, N(alice.p), core_sym::from_string("30.0000"), "led"), eosio_assert_message_exception,
-                            // eosio_assert_message_is("Provided keys, permissions, and delays do not satisfy declared authorizations"));
-    BOOST_REQUIRE_EQUAL(core_sym::from_string("30.0000"), get_balance("alice.p"));
-}
-FC_LOG_AND_RETHROW()
+    // activate
+    BOOST_REQUIRE_EQUAL(success(), activate());
 
-BOOST_FIXTURE_TEST_CASE(reource_limit_test, legis_system_tester)
-try {
-    // create_frontier
-    issue("led", core_sym::from_string("100000.0000"), config::system_account_name);
-    create_accounts_with_resources({N(frontier1.c)});
-    BOOST_REQUIRE_EQUAL(success(), regfrontier("frontier1.c", asset::from_string("1000.00 TEST"), 1));
-    transfer("led", "frontier1.c", core_sym::from_string("100000.0000"), "led");
+    // bp 투표를 통한 vote weight 상승
+    transfer(config::system_account_name, "alice.p", core_sym::from_string("100.0000"), config::system_account_name);
+    BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("10.0000"), core_sym::from_string("10.0000")));
+    BOOST_REQUIRE_EQUAL(success(), vote(N(alice.p), {N(defproducer)}));
 
-    // delegatebw to frontier1.p
-    BOOST_REQUIRE_EQUAL(success(), push_action(config::system_account_name, N(delegatebw), mvo()("from", name(config::system_account_name).to_string())("receiver", "frontier1.c")("stake_net_quantity", core_sym::from_string("10.0000"))("stake_cpu_quantity", core_sym::from_string("10.0000"))("transfer", 0)));
+    produce_blocks(250);
 
+    // 1년 뒤 inflation 계산을 위한 1년 뒤 상황 발생
+    produce_block(fc::days(365));
+    BOOST_REQUIRE_EQUAL(success(), push_action(N(ibct), N(punishoff), mvo()("producer", "defproducer")));
+    BOOST_REQUIRE_EQUAL(success(), reginterior(N(defproducer)));
+    BOOST_REQUIRE_EQUAL(success(), vote(N(alice.p), {N(defproducer)}));
 
-    // cancel frontier1.p delegatebw
-    BOOST_REQUIRE_EQUAL(success(), push_action(config::system_account_name, N(undelegatebw), mvo()("from", name(config::system_account_name).to_string())("receiver", "frontier1.c")("unstake_net_quantity", core_sym::from_string("10.0000"))("unstake_cpu_quantity", core_sym::from_string("10.0000"))));
+    const auto initial_global_state = get_global_state();
+    const uint64_t initial_claim_time = microseconds_since_epoch_of_iso_string(initial_global_state["last_bucket_fill"]);
 
-    // stake to frontier1.p
-    BOOST_REQUIRE_EQUAL(success(), stake("led", "frontier1.c", core_sym::from_string("10.0000"), core_sym::from_string("10.0000")));
-    auto total = get_total_stake("frontier1.c");
-    BOOST_REQUIRE_EQUAL(core_sym::from_string("20.0000"), total["net_weight"].as<asset>());
-    BOOST_REQUIRE_EQUAL(core_sym::from_string("20.0000"), total["cpu_weight"].as<asset>());
+    auto prod = get_producer_info("defproducer");
 
-    // buy ram
-    BOOST_REQUIRE_EQUAL(success(), buyram("frontier1.c", "frontier1.c", core_sym::from_string("100.0000")));
-    auto newtotal = get_total_stake("frontier1.c");
-    auto rambytes = newtotal["ram_bytes"].as_uint64();
-    auto bought_bytes = rambytes - total["ram_bytes"].as_uint64();
+    const asset initial_supply = get_token_supply();
+    const asset initial_balance = get_balance(N(defproducer));
+    const asset initial_ctb_balance = get_balance(N(led.cpay));
 
-    // less than resource <- must be success
-    BOOST_REQUIRE_EQUAL(success(), stake("frontier1.c", "alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
-    
-    // more than resource <- must be fail
-    // BOOST_REQUIRE_EQUAL(success(), stake("frontier1.c", "alice.p", core_sym::from_string("150.0000"), core_sym::from_string("150.0000")));
+    BOOST_REQUIRE_EQUAL(success(), push_action(N(defproducer), N(claimrewards), mvo()("owner", "defproducer")));
 
-    // sell ram
-    BOOST_REQUIRE_EQUAL(success(), sellram("frontier1.c", bought_bytes));
-}
-FC_LOG_AND_RETHROW()
+    const auto global_state = get_global_state();
+    const uint64_t claim_time = microseconds_since_epoch_of_iso_string(global_state["last_bucket_fill"]);
+    const auto half_year_cnt = global_state["half_year_cnt"].as_double();
+    const uint32_t tot_unpaid_blocks = global_state["total_unpaid_blocks"].as<uint32_t>();
 
-BOOST_FIXTURE_TEST_CASE(create_block_test, legis_system_tester)
-try {
+    prod = get_producer_info("defproducer");
+    // reward 지급 완료 되었는지 확인.
+    BOOST_REQUIRE_EQUAL(1, prod["unpaid_blocks"].as<uint32_t>());
+    BOOST_REQUIRE_EQUAL(1, tot_unpaid_blocks);
 
-}
-FC_LOG_AND_RETHROW()
+    const asset supply = get_token_supply();
+    const asset balance = get_balance(N(defproducer));
+    const asset ctb_balance = get_balance(N(led.cpay));
+    auto usecs_between_fills = claim_time - initial_claim_time;
 
-BOOST_FIXTURE_TEST_CASE(vote_test, legis_system_tester)
-try {
-    activate();
-
-    issue("led", core_sym::from_string("1000.0000"), config::system_account_name);
-    BOOST_REQUIRE_EQUAL(core_sym::from_string("0.0000"), get_balance("alice.p"));
-
-    transfer("led", "alice.p", core_sym::from_string("1000.0000"), "led");
-    BOOST_REQUIRE_EQUAL(success(), stake_with_transfer("alice.p", "bob.p", core_sym::from_string("200.0000"), core_sym::from_string("100.0000")));
-
-    // create voter
-    auto total = get_total_stake("bob.p");
-    BOOST_REQUIRE_EQUAL(core_sym::from_string("210.0000"), total["net_weight"].as<asset>());
-    BOOST_REQUIRE_EQUAL(core_sym::from_string("110.0000"), total["cpu_weight"].as<asset>());
-    REQUIRE_MATCHING_OBJECT(voter("bob.p", core_sym::from_string("300.0000")), get_voter_info("bob.p"));
-
-    // create interior
-    auto key = fc::crypto::public_key(std::string("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV"));
-    BOOST_REQUIRE_EQUAL(success(), push_action(N(alice.p), N(reginterior), mvo()("interior", "alice.p")("producer_key", key)("election_promise", "test")("url", "http://block.one")("location", 1)("logo_256", "logo")));
-
-    // change interior info by vote to interior
-    auto interior_info = get_interior_info("alice.p");
-    BOOST_REQUIRE_EQUAL("0.00000000000000000", interior_info["vote_weights"]);
-    BOOST_REQUIRE_EQUAL(success(), vote(N(bob.p), {N(alice.p)}));
-    interior_info = get_interior_info("alice.p");
-    BOOST_REQUIRE_EQUAL("3274072432716.95507812500000000", interior_info["vote_weights"]);
-
-    // // update voting power by changebw
-    // base_tester::push_action(N(led.token), N(changebw), N(led), mvo()("from", "bob.p")("receiver", "alice.p")("stake_net_delta", core_sym::from_string("10.000"))("stake_cpu_delta", core_sym::from_string("10.000"))("transfer", 1));
-    // interior_info = get_interior_info("alice.p");
-    // std::cout << interior_info << std::endl;
+    // service 이용도에 따른 inflation 지급 금액 확인.
+    BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(usecs_between_fills) * (3 * (continuous_rate / 4. * half_year_cnt) / 5.) / usecs_per_year)) + 1,
+                    ctb_balance.get_amount() - initial_ctb_balance.get_amount());
+    // vote inflation 발생으로 인한 지급 금액 및 지급 된 결과 확인.
+    BOOST_REQUIRE_EQUAL(balance.get_amount() - initial_balance.get_amount(), balance.get_amount());
 }
 FC_LOG_AND_RETHROW()
 
