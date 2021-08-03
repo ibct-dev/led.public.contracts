@@ -1929,7 +1929,7 @@ try
         const asset supply = get_token_supply();
 
         // Amount issued per year is very close to the 2% inflation target. Small difference (500 tokens out of 20'000'000 issued)
-        BOOST_REQUIRE(2000 * 10000 > int64_t(supply.get_amount() - initial_supply.get_amount()) / 10000);
+        BOOST_REQUIRE(2000 * 10000 > int64_t(supply.get_amount() - initial_supply.get_amount()) / 10000); // 1,980.1124
     }
 }
 FC_LOG_AND_RETHROW()
@@ -2890,6 +2890,7 @@ try {
     const uint64_t claim_time = microseconds_since_epoch_of_iso_string(global_state["last_bucket_fill"]);
     const auto half_year_cnt = global_state["half_year_cnt"].as_double();
     const uint32_t tot_unpaid_blocks = global_state["total_unpaid_blocks"].as<uint32_t>();
+    const int64_t savings = get_balance(N(led.saving)).get_amount();
 
     prod = get_producer_info("defproducer");
     // reward 지급 완료 되었는지 확인.
@@ -2901,11 +2902,22 @@ try {
     const asset ctb_balance = get_balance(N(led.cpay));
     auto usecs_between_fills = claim_time - initial_claim_time;
 
-    // service 이용도에 따른 inflation 지급 금액 확인.
+    // inflation 발생 비율 확인
+    // initial_supply에 비례하여 약 0.6%
     BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(usecs_between_fills) * (3 * (continuous_rate / 4. * half_year_cnt) / 5.) / usecs_per_year)) + 1,
                     ctb_balance.get_amount() - initial_ctb_balance.get_amount());
-    // vote inflation 발생으로 인한 지급 금액 및 지급 된 결과 확인.
+    // initial_suppl에 비례하여 약 0.4%
     BOOST_REQUIRE_EQUAL(balance.get_amount() - initial_balance.get_amount(), balance.get_amount());
+    // initial_supply에 비례하여 약 1.0%
+    BOOST_REQUIRE_EQUAL(int64_t(supply.get_amount() - initial_supply.get_amount()) - ctb_balance.get_amount() - balance.get_amount(), savings);
+
+    // ctd balance = 5956342.7628
+    // balance = 3970895.1750
+    // saving = 9927237.9378
+    // inflation = 19854475
+
+    // 총 발생이 된 inflation이 약 2% 발생이 되었는지 확인.
+    BOOST_REQUIRE_EQUAL(int64_t(supply.get_amount() - initial_supply.get_amount()), ctb_balance.get_amount() + balance.get_amount() + savings);
 }
 FC_LOG_AND_RETHROW()
 
