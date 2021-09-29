@@ -1832,7 +1832,7 @@ try
                             ctb_balance.get_amount());
         // BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(secs_between_fills) * (continuous_rate / 4.) / secs_per_year)),
         //                     rex_balance.get_amount());
-        BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(secs_between_fills) * 2 * (continuous_rate / 4.) / secs_per_year)) + 1,
+        BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(secs_between_fills) * 3 * (continuous_rate / 4.) / secs_per_year)),
                             savings);
 
         // check buckect of inflation
@@ -1916,7 +1916,7 @@ try
                             ctb_balance.get_amount() - initial_ctb_balance.get_amount());
         // BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(usecs_between_fills) * (continuous_rate / 4.) / usecs_per_year)),
         //                     rex_balance.get_amount() - initial_rex_balance.get_amount());
-        BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(usecs_between_fills) * 2 * (continuous_rate / 4.) / usecs_per_year)) + 1,
+        BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(usecs_between_fills) * 3 * (continuous_rate / 4.) / usecs_per_year)) + 1,
                             savings - initial_savings);
     }
 
@@ -2087,7 +2087,7 @@ try
         const double expected_supply_growth = initial_supply.get_amount() * double(usecs_between_fills) * cont_rate / usecs_per_year;
         BOOST_REQUIRE_EQUAL(int64_t(expected_supply_growth), supply.get_amount() - initial_supply.get_amount());
 
-        BOOST_REQUIRE(within_one(2 * int64_t(expected_supply_growth) / 4 + 1, savings - initial_savings));
+        BOOST_REQUIRE(within_one(3 * int64_t(expected_supply_growth) / 4 + 1, savings - initial_savings));
 
         const int64_t expected_perblock_bucket = int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * (cont_rate / 4.) / 5. / usecs_per_year);
         const int64_t expected_pervote_bucket = int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * (cont_rate / 4.) / 5. / usecs_per_year);
@@ -2153,7 +2153,7 @@ try
         const double expected_supply_growth = initial_supply.get_amount() * double(usecs_between_fills) * cont_rate / usecs_per_year;
         BOOST_REQUIRE_EQUAL(int64_t(expected_supply_growth), supply.get_amount() - initial_supply.get_amount());
 
-        BOOST_REQUIRE(within_one(2 * int64_t(expected_supply_growth) / 4 + 1, savings - initial_savings));
+        BOOST_REQUIRE(within_one(3 * int64_t(expected_supply_growth) / 4 + 1, savings - initial_savings));
 
         const int64_t expected_perblock_bucket = initial_perblock_bucket + int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * (cont_rate / 4.) / 5. / usecs_per_year);
         const int64_t expected_perctb_bucket = initial_perctb_bucket + int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * 3 * (cont_rate / 4.) / 5. / usecs_per_year);
@@ -2237,7 +2237,7 @@ try
         const double expected_supply_growth = initial_supply.get_amount() * double(usecs_between_fills) * cont_rate / usecs_per_year;
         BOOST_REQUIRE_EQUAL(int64_t(expected_supply_growth), supply.get_amount() - initial_supply.get_amount());
 
-        BOOST_REQUIRE(within_one(2 * int64_t(expected_supply_growth) / 4, savings - initial_savings));
+        BOOST_REQUIRE(within_one(3 * int64_t(expected_supply_growth) / 4, savings - initial_savings));
 
         const int64_t expected_perblock_bucket = int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * cont_rate / 4. / 5. / usecs_per_year) + initial_perblock_bucket;
         const int64_t expected_pervote_bucket = int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * cont_rate / 4. / 5. / usecs_per_year) + initial_pervote_bucket;
