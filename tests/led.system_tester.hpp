@@ -38,8 +38,9 @@ public:
         produce_blocks(2);
 
         create_accounts({N(led.token), N(led.ram), N(led.ramfee), N(led.stake),
-                         N(led.cpay), N(led.pback), N(led.rexpay), N(led.bpay),
-                         N(led.vpay), N(led.saving), N(led.names), N(led.rex), N(ibct)});
+                         N(led.cpay), N(led.pback), N(led.bpay),
+                         N(led.vpay), N(led.saving), N(led.names), N(ibct)
+                         /*,N(led.rexpay), N(led.rex)*/});
 
         produce_blocks(100);
         set_code(N(led.token), contracts::token_wasm());
@@ -306,7 +307,7 @@ public:
     {
         return push_action(voter, N(voteproducer), mvo()("voter", voter)("proxy", proxy)("interiors", interiors));
     }
-
+/*
     action_result deposit(const account_name &owner, const asset &amount)
     {
         return push_action(name(owner), N(deposit), mvo()("owner", owner)("amount", amount));
@@ -624,7 +625,7 @@ public:
         memcpy(data.data(), itr->value.data(), data.size());
         return data.empty() ? fc::variant() : abi_ser.binary_to_variant("rex_pool", data, abi_serializer_max_time);
     }
-
+*/
     uint32_t last_block_time() const
     {
         return time_point_sec(control->head_block_time()).sec_since_epoch();
@@ -820,7 +821,7 @@ public:
 
         return producer_names;
     }
-
+/*
     void setup_rex_accounts(const std::vector<account_name> &accounts,
                             const asset &init_balance,
                             const asset &net = core_sym::from_string("80.0000"),
@@ -849,7 +850,7 @@ public:
             }
         }
     }
-
+*/
     abi_serializer initialize_multisig()
     {
         abi_serializer msig_abi_ser;

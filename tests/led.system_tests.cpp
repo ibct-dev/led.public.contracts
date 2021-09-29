@@ -1812,7 +1812,7 @@ try
         BOOST_REQUIRE_EQUAL(1, tot_unpaid_blocks);
         const asset supply = get_token_supply();
         const asset balance = get_balance(N(defproducera));
-        const asset rex_balance = get_balance(N(led.rexpay));
+        // const asset rex_balance = get_balance(N(led.rexpay));
         const asset ctb_balance = get_balance(N(led.cpay));
 
         BOOST_REQUIRE_EQUAL(claim_time, microseconds_since_epoch_of_iso_string(prod["last_claim_time"]));
@@ -1830,8 +1830,8 @@ try
                             balance.get_amount() - initial_balance.get_amount());
         BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(secs_between_fills) * (3 * (continuous_rate / 4. * half_year_cnt) / 5.) / secs_per_year)) + 1,
                             ctb_balance.get_amount());
-        BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(secs_between_fills) * (continuous_rate / 4.) / secs_per_year)),
-                            rex_balance.get_amount());
+        // BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(secs_between_fills) * (continuous_rate / 4.) / secs_per_year)),
+        //                     rex_balance.get_amount());
         BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(secs_between_fills) * 2 * (continuous_rate / 4.) / secs_per_year)) + 1,
                             savings);
 
@@ -1884,7 +1884,7 @@ try
         const asset initial_supply = get_token_supply();
         const asset initial_balance = get_balance(N(defproducera));
         const asset initial_ctb_balance = get_balance(N(led.cpay));
-        const asset initial_rex_balance = get_balance(N(led.rexpay));
+        // const asset initial_rex_balance = get_balance(N(led.rexpay));
 
         BOOST_REQUIRE_EQUAL(success(), push_action(N(defproducera), N(claimrewards), mvo()("owner", "defproducera")));
 
@@ -1901,7 +1901,7 @@ try
         BOOST_REQUIRE_EQUAL(1, tot_unpaid_blocks);
         const asset supply = get_token_supply();
         const asset balance = get_balance(N(defproducera));
-        const asset rex_balance = get_balance(N(led.rexpay));
+        // const asset rex_balance = get_balance(N(led.rexpay));
         const asset ctb_balance = get_balance(N(led.cpay));
 
         BOOST_REQUIRE_EQUAL(claim_time, microseconds_since_epoch_of_iso_string(prod["last_claim_time"]));
@@ -1914,8 +1914,8 @@ try
                             balance.get_amount() - initial_balance.get_amount());
         BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(usecs_between_fills) * (3 * (continuous_rate / 4. * half_year_cnt) / 5.) / usecs_per_year)) + 2,
                             ctb_balance.get_amount() - initial_ctb_balance.get_amount());
-        BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(usecs_between_fills) * (continuous_rate / 4.) / usecs_per_year)),
-                            rex_balance.get_amount() - initial_rex_balance.get_amount());
+        // BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(usecs_between_fills) * (continuous_rate / 4.) / usecs_per_year)),
+        //                     rex_balance.get_amount() - initial_rex_balance.get_amount());
         BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(usecs_between_fills) * 2 * (continuous_rate / 4.) / usecs_per_year)) + 1,
                             savings - initial_savings);
     }
@@ -2680,36 +2680,36 @@ try
 }
 FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(setabi_bios, TESTER)
+BOOST_FIXTURE_TEST_CASE(setabi_bios, legis_system_tester)
 try
 {
     abi_serializer abi_ser(fc::json::from_string((const char *)contracts::system_abi().data()).template as<abi_def>(), abi_serializer_max_time);
     set_code(config::system_account_name, contracts::bios_wasm());
     set_abi(config::system_account_name, contracts::bios_abi().data());
-    create_account(N(led.token));
-    set_abi(N(led.token), contracts::token_abi().data());
-    {
-        auto res = get_row_by_account(config::system_account_name, config::system_account_name, N(abihash), N(led.token));
-        _abi_hash abi_hash;
-        auto abi_hash_var = abi_ser.binary_to_variant("abi_hash", res, abi_serializer_max_time);
-        abi_serializer::from_variant(abi_hash_var, abi_hash, get_resolver(), abi_serializer_max_time);
-        auto abi = fc::raw::pack(fc::json::from_string((const char *)contracts::token_abi().data()).template as<abi_def>());
-        auto result = fc::sha256::hash((const char *)abi.data(), abi.size());
+    // create_account(N(led.token));
+    // set_abi(N(led.token), contracts::token_abi().data());
+    // {
+    //     auto res = get_row_by_account(config::system_account_name, config::system_account_name, N(abihash), N(led.token));
+    //     _abi_hash abi_hash;
+    //     auto abi_hash_var = abi_ser.binary_to_variant("abi_hash", res, abi_serializer_max_time);
+    //     abi_serializer::from_variant(abi_hash_var, abi_hash, get_resolver(), abi_serializer_max_time);
+    //     auto abi = fc::raw::pack(fc::json::from_string((const char *)contracts::token_abi().data()).template as<abi_def>());
+    //     auto result = fc::sha256::hash((const char *)abi.data(), abi.size());
 
-        BOOST_REQUIRE(abi_hash.hash == result);
-    }
+    //     BOOST_REQUIRE(abi_hash.hash == result);
+    // }
 
-    set_abi(N(led.token), contracts::system_abi().data());
-    {
-        auto res = get_row_by_account(config::system_account_name, config::system_account_name, N(abihash), N(led.token));
-        _abi_hash abi_hash;
-        auto abi_hash_var = abi_ser.binary_to_variant("abi_hash", res, abi_serializer_max_time);
-        abi_serializer::from_variant(abi_hash_var, abi_hash, get_resolver(), abi_serializer_max_time);
-        auto abi = fc::raw::pack(fc::json::from_string((const char *)contracts::system_abi().data()).template as<abi_def>());
-        auto result = fc::sha256::hash((const char *)abi.data(), abi.size());
+    // set_abi(N(led.token), contracts::system_abi().data());
+    // {
+    //     auto res = get_row_by_account(config::system_account_name, config::system_account_name, N(abihash), N(led.token));
+    //     _abi_hash abi_hash;
+    //     auto abi_hash_var = abi_ser.binary_to_variant("abi_hash", res, abi_serializer_max_time);
+    //     abi_serializer::from_variant(abi_hash_var, abi_hash, get_resolver(), abi_serializer_max_time);
+    //     auto abi = fc::raw::pack(fc::json::from_string((const char *)contracts::system_abi().data()).template as<abi_def>());
+    //     auto result = fc::sha256::hash((const char *)abi.data(), abi.size());
 
-        BOOST_REQUIRE(abi_hash.hash == result);
-    }
+    //     BOOST_REQUIRE(abi_hash.hash == result);
+    // }
 }
 FC_LOG_AND_RETHROW()
 
@@ -2885,7 +2885,7 @@ try
     // produce_blocks( 250 );
 }
 FC_LOG_AND_RETHROW()
-
+/*
 BOOST_FIXTURE_TEST_CASE(rex_test, legis_system_tester)
 try
 {
@@ -4414,5 +4414,5 @@ try
     BOOST_REQUIRE_EQUAL(set_total_lease_fee, curr_rex_pool["total_lease_fee"].as<asset>());
 }
 FC_LOG_AND_RETHROW()
-
+*/
 BOOST_AUTO_TEST_SUITE_END()
