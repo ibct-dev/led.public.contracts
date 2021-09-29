@@ -109,8 +109,7 @@ namespace eosiosystem {
          auto new_tokens = static_cast<int64_t>( (continuous_rate * double(token_supply.amount) * double(usecs_since_last_fill)) / double(useconds_per_year) );
 
          auto to_producers       = (new_tokens / 4) * _gstate.half_year_cnt;
-         auto to_rexpool         = (new_tokens / 4);
-         auto to_saving          = new_tokens - (to_producers + to_rexpool);
+         auto to_saving          = new_tokens - to_producers;
          
          auto to_per_block_pay   = to_producers / 5;
          auto to_per_vote_pay    = to_producers / 5;
@@ -118,17 +117,17 @@ namespace eosiosystem {
          
          {
             token::issue_action issue_act{token_account, {{get_self(), active_permission}}};
-            issue_act.send(get_self(), asset(new_tokens, core_symbol()), "issue tokens for producer pay and rexpools");
+            issue_act.send(get_self(), asset(new_tokens, core_symbol()), "issue tokens for producer pay");
          }
          {
             token::transfer_action transfer_act{token_account, {{get_self(), active_permission}}};
-            transfer_act.send(get_self(), rexpay_account, asset(to_rexpool, core_symbol()), "fund rex pool");
+            // transfer_act.send(get_self(), rexpay_account, asset(to_rexpool, core_symbol()), "fund rex pool");
             transfer_act.send(get_self(), saving_account, asset(to_saving, core_symbol()), "fund saving pool");
             transfer_act.send(get_self(), bpay_account, asset(to_per_block_pay, core_symbol()), "fund per-block bucket");
             transfer_act.send(get_self(), cpay_account, asset(to_per_ctb_pay, core_symbol()), "fund per-ctb bucket");
             transfer_act.send(get_self(), vpay_account, asset(to_per_vote_pay, core_symbol()), "fund per-vote bucket");
          }
-         channel_to_rex(rexpay_account, asset(to_rexpool, core_symbol()));
+         // channel_to_rex(rexpay_account, asset(to_rexpool, core_symbol()));
 
          _gstate.perblock_bucket += to_per_block_pay;
          _gstate.perctb_bucket   += to_per_ctb_pay;
