@@ -303,6 +303,13 @@ public:
         return r;
     }
 
+    action_result buyledservice(const account_name &from, const asset &amount, const account_name &to)
+    {
+        action_result r = push_action(from, N(buyledservice), mvo()("buyer", from)("quantity", amount)("frontier", to));
+        return r;
+    }
+
+
     action_result vote(const account_name &voter, const std::vector<account_name> &interiors, const account_name &proxy = name(0))
     {
         return push_action(voter, N(voteproducer), mvo()("voter", voter)("proxy", proxy)("interiors", interiors));

@@ -1084,6 +1084,12 @@ try
     gstate = get_global_state();
     BOOST_REQUIRE_EQUAL(4000000, gstate["total_purchase_amount"].as_int64());
 
+    // buyledservice to frontier1.c
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(carol.p), amount, N(frontier1.c)));
+    gstate = get_global_state();
+    BOOST_REQUIRE_EQUAL(5000000, gstate["total_purchase_amount"].as_int64());
+
+
     // pass 1 day clean purchase amount
     produce_block(fc::days(1));
     produce_blocks();
@@ -1204,10 +1210,10 @@ try
 }
 FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(unregistered_frontier_buyservice, legis_system_tester)
+BOOST_FIXTURE_TEST_CASE(buyledservice_for_frontier, legis_system_tester)
 try
 {
-    create_accounts_with_resources({N(frontier1.c)});
+    create_account_with_resources(N(frontier1.c), config::system_account_name);
     auto ratio = asset::from_string("1.500 TEST");
     auto sym_name = ratio.get_symbol();
     BOOST_REQUIRE_EQUAL(success(), regfrontier("frontier1.c", ratio, 1));
@@ -1222,8 +1228,89 @@ try
     transfer("led", "alice.p", core_sym::from_string("1000.0000"), "led");
     auto amount = asset(1000000, symbol{CORE_SYMBOL});
 
+    //user must stake before buyservice
+    BOOST_REQUIRE_EQUAL(wasm_assert_msg("user must stake before they can buy"), buyledservice(N(alice.p), amount, acnt));
+
     //alice stake
     BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
+
+    //buyserivce
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(alice.p), amount, acnt));
+
+    //first buyservice is reflect in service weight
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("100.0000")) == info["service_weights"].as_double());
+    auto core_symbol_balance = get_balance(N(alice.p));
+    auto test_symbol_balance = get_balance(N(alice.p), sym_name);
+    //no payback for buyledservice
+    BOOST_REQUIRE_EQUAL(8900000, core_symbol_balance.get_amount());
+    //no dapp token for buyledservice
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
+    //check buyer table
+    auto buyers = info["buyers"].get_array();
+    BOOST_REQUIRE_EQUAL("alice.p", buyers[0]);
+
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(alice.p), amount, acnt));
+    //second buyservice is not reflect in service weight
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("100.0000")) == info["service_weights"].as_double());
+    core_symbol_balance = get_balance(N(alice.p));
+    test_symbol_balance = get_balance(N(alice.p), sym_name);
+    BOOST_REQUIRE_EQUAL(7900000, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
+    //check buyer table
+    buyers = info["buyers"].get_array();
+    BOOST_REQUIRE_EQUAL(1, buyers.size());
+
+    // check small amount
+    amount = asset(1001000, symbol{CORE_SYMBOL});
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(alice.p), amount, acnt));
+    core_symbol_balance = get_balance(N(alice.p));
+    test_symbol_balance = get_balance(N(alice.p), sym_name);
+    BOOST_REQUIRE_EQUAL(6899000, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
+    amount = asset(1000100, symbol{CORE_SYMBOL});
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(alice.p), amount, acnt));
+    core_symbol_balance = get_balance(N(alice.p));
+    test_symbol_balance = get_balance(N(alice.p), sym_name);
+    BOOST_REQUIRE_EQUAL(5898900, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
+    amount = asset(1000070, symbol{CORE_SYMBOL});
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(alice.p), amount, acnt));
+    core_symbol_balance = get_balance(N(alice.p));
+    test_symbol_balance = get_balance(N(alice.p), sym_name);
+    BOOST_REQUIRE_EQUAL(4898830, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+}
+FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(unregistered_frontier_buyservice, legis_system_tester)
+try
+{
+    create_accounts_with_resources({N(frontier1.c)});
+    auto ratio = asset::from_string("1.500 TEST");
+    auto sym_name = ratio.get_symbol();
+    BOOST_REQUIRE_EQUAL(success(), regfrontier("frontier1.c", ratio, 1));
+
+    const account_name &acnt = N(frontier1.c);
+
+    //frontier_info
+    auto info = get_frontier_info(acnt);
+    BOOST_REQUIRE_EQUAL(0, info["service_weights"].as_double());
+
+    issue("led", core_sym::from_string("2000.0000"), config::system_account_name);
+    transfer("led", "alice.p", core_sym::from_string("1000.0000"), "led");
+    transfer("led", "bob.p", core_sym::from_string("1000.0000"), "led");
+    auto amount = asset(1000000, symbol{CORE_SYMBOL});
+
+    //alice stake
+    BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
+    //bob stake
+    BOOST_REQUIRE_EQUAL(success(), stake("bob.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
 
     BOOST_REQUIRE_EQUAL(success(), push_action(acnt, N(unregprod), mvo()("producer", "frontier1.c")));
     info = get_producer_info(acnt);
@@ -1235,6 +1322,15 @@ try
     BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("0.0000")) == info["service_weights"].as_double());
     auto core_symbol_balance = get_balance(N(alice.p));
     auto test_symbol_balance = get_balance(N(alice.p), sym_name);
+    BOOST_REQUIRE_EQUAL(9900000, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
+    //buyledserivce also fail
+    BOOST_REQUIRE_EQUAL(wasm_assert_msg("frontier is not currently registered"), buyledservice(N(bob.p), amount, acnt));
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("0.0000")) == info["service_weights"].as_double());
+    core_symbol_balance = get_balance(N(bob.p));
+    test_symbol_balance = get_balance(N(bob.p), sym_name);
     BOOST_REQUIRE_EQUAL(9900000, core_symbol_balance.get_amount());
     BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
 
@@ -1259,6 +1355,28 @@ try
     // second payback is not work
     BOOST_REQUIRE_EQUAL(7950000, core_symbol_balance.get_amount());
     BOOST_REQUIRE_EQUAL(300000, test_symbol_balance.get_amount());
+
+    // buyledservice
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(bob.p), amount, acnt));
+
+    //first buyledservice is reflect in service weight
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
+    core_symbol_balance = get_balance(N(bob.p));
+    test_symbol_balance = get_balance(N(bob.p), sym_name);
+    //payback is not work with buyledservice
+    BOOST_REQUIRE_EQUAL(8900000, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
+    //second buyledservice is not reflect in service weight
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(bob.p), amount, acnt));
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
+    core_symbol_balance = get_balance(N(bob.p));
+    test_symbol_balance = get_balance(N(bob.p), sym_name);
+    BOOST_REQUIRE_EQUAL(7900000, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
 }
 FC_LOG_AND_RETHROW()
 
@@ -1289,7 +1407,7 @@ try
 
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, acnt));
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(bob.p), amount, acnt));
-    BOOST_REQUIRE_EQUAL(success(), buyservice(N(carol.p), amount, acnt));
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(carol.p), amount, acnt));
 
     produce_blocks(250);
     auto producer_keys = control->head_block_state()->active_schedule.producers;
@@ -1357,7 +1475,7 @@ try
 
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, acnt));
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(bob.p), amount, acnt));
-    BOOST_REQUIRE_EQUAL(success(), buyservice(N(carol.p), amount, acnt));
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(carol.p), amount, acnt));
 
     produce_blocks(250);
     auto producer_keys = control->head_block_state()->active_schedule.producers;
@@ -1401,9 +1519,11 @@ try
     //stake and buyservice
     issue("led", core_sym::from_string("1500.0000"), config::system_account_name);
     transfer("led", "alice.p", core_sym::from_string("500.0000"), "led");
+    transfer("led", "bob.p", core_sym::from_string("500.0000"), "led");
     auto amount = asset(1000000, symbol{CORE_SYMBOL});
 
     BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
+    BOOST_REQUIRE_EQUAL(success(), stake("bob.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
 
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, acnt));
 
@@ -1421,6 +1541,24 @@ try
     // re regfrontier must same service weight
     re_regfrontier(acnt, ratio, 1);
     BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("100.0000")) == info["service_weights"].as_double());
+
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(bob.p), amount, acnt));
+
+    // first buyledservice is reflect in service weight
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
+
+    // unregproducer
+    BOOST_REQUIRE_EQUAL(success(), push_action(acnt, N(unregprod), mvo()("producer", "frontier1.c")));
+
+    // service weight must same service weight
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
+
+    // re regfrontier must same service weight
+    re_regfrontier(acnt, ratio, 1);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
+
 }
 FC_LOG_AND_RETHROW()
 
@@ -1555,7 +1693,7 @@ try
     }
     for (const auto &p : frontiers_name)
     {
-        BOOST_REQUIRE_EQUAL(success(), buyservice(N(carol.p), amount, p));
+        BOOST_REQUIRE_EQUAL(success(), buyledservice(N(carol.p), amount, p));
     }
 
     // change active producers
@@ -2000,7 +2138,7 @@ try
         auto amount = asset(1000000, symbol{CORE_SYMBOL});
         BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, N(frontier1.c)));
         amount = asset(900000, symbol{CORE_SYMBOL});
-        BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, N(frontier2.c)));
+        BOOST_REQUIRE_EQUAL(success(), buyledservice(N(alice.p), amount, N(frontier2.c)));
         produce_blocks(250);
     }
 

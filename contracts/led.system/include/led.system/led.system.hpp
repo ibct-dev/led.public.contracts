@@ -779,6 +779,9 @@ namespace eosiosystem {
          void buyservice( const name& buyer, const asset& quantity, const name& frontier );
 
          [[eosio::action]]
+         void buyledservice( const name& buyer, const asset& quantity, const name& frontier );
+
+         [[eosio::action]]
          void regproxy( const name& proxy, const std::string& slogan, const std::string& background, const std::string& url, uint16_t location, const std::string& logo_256 );
 
          [[eosio::action]]
@@ -839,6 +842,7 @@ namespace eosiosystem {
          using changeratio_action = eosio::action_wrapper<"changeratio"_n, &system_contract::changeratio>;
          using unregprod_action = eosio::action_wrapper<"unregprod"_n, &system_contract::unregprod>;
          using buyservice_action = eosio::action_wrapper<"buyservice"_n, &system_contract::buyservice>;
+         using buyledservice_action = eosio::action_wrapper<"buyledservice"_n, &system_contract::buyledservice>;
          using voteproducer_action = eosio::action_wrapper<"voteproducer"_n, &system_contract::voteproducer>;
          using regproxy_action = eosio::action_wrapper<"regproxy"_n, &system_contract::regproxy>;
          using unregproxy_action = eosio::action_wrapper<"unregproxy"_n, &system_contract::unregproxy>;
