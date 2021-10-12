@@ -1174,9 +1174,9 @@ try
     BOOST_REQUIRE_EQUAL("alice.p", buyers[0]);
 
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, acnt));
-    //second buyservice is not reflect in service weight
+    //second buyservice also reflect in service weight
     info = get_frontier_info(acnt);
-    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("100.0000")) == info["service_weights"].as_double());
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
     core_symbol_balance = get_balance(N(alice.p));
     test_symbol_balance = get_balance(N(alice.p), sym_name);
     BOOST_REQUIRE_EQUAL(7950000, core_symbol_balance.get_amount());
@@ -1252,9 +1252,9 @@ try
     BOOST_REQUIRE_EQUAL("alice.p", buyers[0]);
 
     BOOST_REQUIRE_EQUAL(success(), buyledservice(N(alice.p), amount, acnt));
-    //second buyservice is not reflect in service weight
+    //second buyservice also reflect in service weight
     info = get_frontier_info(acnt);
-    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("100.0000")) == info["service_weights"].as_double());
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
     core_symbol_balance = get_balance(N(alice.p));
     test_symbol_balance = get_balance(N(alice.p), sym_name);
     BOOST_REQUIRE_EQUAL(7900000, core_symbol_balance.get_amount());
@@ -1346,10 +1346,10 @@ try
     BOOST_REQUIRE_EQUAL(8950000, core_symbol_balance.get_amount());
     BOOST_REQUIRE_EQUAL(150000, test_symbol_balance.get_amount());
 
-    //second buyservice is not reflect in service weight
+    //second buyservice also reflect in service weight
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, acnt));
     info = get_frontier_info(acnt);
-    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("100.0000")) == info["service_weights"].as_double());
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
     core_symbol_balance = get_balance(N(alice.p));
     test_symbol_balance = get_balance(N(alice.p), sym_name);
     // second payback is not work
@@ -1361,17 +1361,17 @@ try
 
     //first buyledservice is reflect in service weight
     info = get_frontier_info(acnt);
-    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("300.0000")) == info["service_weights"].as_double());
     core_symbol_balance = get_balance(N(bob.p));
     test_symbol_balance = get_balance(N(bob.p), sym_name);
     //payback is not work with buyledservice
     BOOST_REQUIRE_EQUAL(8900000, core_symbol_balance.get_amount());
     BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
 
-    //second buyledservice is not reflect in service weight
+    //second buyledservice also reflect in service weight
     BOOST_REQUIRE_EQUAL(success(), buyledservice(N(bob.p), amount, acnt));
     info = get_frontier_info(acnt);
-    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("400.0000")) == info["service_weights"].as_double());
     core_symbol_balance = get_balance(N(bob.p));
     test_symbol_balance = get_balance(N(bob.p), sym_name);
     BOOST_REQUIRE_EQUAL(7900000, core_symbol_balance.get_amount());

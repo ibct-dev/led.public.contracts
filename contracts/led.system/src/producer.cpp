@@ -361,7 +361,7 @@ namespace eosiosystem {
       }
 
       //KYC Logic
-      if ( isPerson( buyer ) && !fitr->buyer_exists( buyer ) ){
+      if ( isPerson( buyer ) /* && !fitr->buyer_exists( buyer ) */ ){
          // Buy Service에 해당하는 service weight를 증가
          double service_weight = stake2vote(int64_t(quantity.amount));
          _frontiers.modify( fitr, same_payer, [&]( auto& f ) {
@@ -370,10 +370,12 @@ namespace eosiosystem {
          });
 
          // Payback
-         auto payback_token = asset(static_cast<int64_t>(quantity.amount * 0.05), quantity.symbol);
-         {
-            token::transfer_action frontier_payback_transfer_act{token_account, {frontier, active_permission}};
-            frontier_payback_transfer_act.send(frontier, buyer, payback_token, "frontier payback");
+         if(!fitr->buyer_exists( buyer )){
+            auto payback_token = asset(static_cast<int64_t>(quantity.amount * 0.05), quantity.symbol);
+            {
+               token::transfer_action frontier_payback_transfer_act{token_account, {frontier, active_permission}};
+               frontier_payback_transfer_act.send(frontier, buyer, payback_token, "frontier payback");
+            }
          }
          
          auto buyer_itr = _buyers.find( buyer.value );
@@ -387,10 +389,12 @@ namespace eosiosystem {
                b.cumulative_payback += quantity.amount * 0.05;
             });
          }
-
-         _frontiers.modify( fitr, frontier, [&]( frontier_info& info ){
-            info.buyers.push_back( buyer );
-         });
+         
+         if(!fitr->buyer_exists( buyer )){
+            _frontiers.modify( fitr, frontier, [&]( frontier_info& info ){
+               info.buyers.push_back( buyer );
+            });
+         }
       }
       _gstate.total_purchase_amount += quantity.amount;
    }
@@ -424,7 +428,7 @@ namespace eosiosystem {
       }
 
       //KYC Logic
-      if ( isPerson( buyer ) && !fitr->buyer_exists( buyer ) ){
+      if ( isPerson( buyer ) /* && !fitr->buyer_exists( buyer )*/ ){
          // Buy Service에 해당하는 service weight를 증가
          double service_weight = stake2vote(int64_t(quantity.amount));
          _frontiers.modify( fitr, same_payer, [&]( auto& f ) {
@@ -438,10 +442,12 @@ namespace eosiosystem {
                b.owner              = buyer;
             });
          }
-
-         _frontiers.modify( fitr, frontier, [&]( frontier_info& info ){
-            info.buyers.push_back( buyer );
-         });
+         
+         if(!fitr->buyer_exists( buyer )){
+            _frontiers.modify( fitr, frontier, [&]( frontier_info& info ){
+               info.buyers.push_back( buyer );
+            });
+         }
       }
       _gstate.total_purchase_amount += quantity.amount;
    }
