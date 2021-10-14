@@ -361,7 +361,7 @@ namespace eosiosystem {
       }
 
       //KYC Logic
-      if ( isPerson( buyer ) /* && !fitr->buyer_exists( buyer ) */ ){
+      if ( isPerson( buyer ) ){
          // Buy Service에 해당하는 service weight를 증가
          double service_weight = stake2vote(int64_t(quantity.amount));
          _frontiers.modify( fitr, same_payer, [&]( auto& f ) {
@@ -428,7 +428,7 @@ namespace eosiosystem {
       }
 
       //KYC Logic
-      if ( isPerson( buyer ) /* && !fitr->buyer_exists( buyer )*/ ){
+      if ( isPerson( buyer ) ){
          // Buy Service에 해당하는 service weight를 증가
          double service_weight = stake2vote(int64_t(quantity.amount));
          _frontiers.modify( fitr, same_payer, [&]( auto& f ) {
@@ -454,12 +454,7 @@ namespace eosiosystem {
 
    void system_contract::voteproducer( const name& voter, const name& proxy, const std::vector<name>& interiors ) {
       require_auth( voter );
-      // vote_stake_updater( voter );
       update_votes( voter, proxy, interiors, true );
-      // auto rex_itr = _rexbalance.find( voter.value );
-      // if( rex_itr != _rexbalance.end() && rex_itr->rex_balance.amount > 0 ) {
-      //    check_voting_requirement( voter, "voter holding REX tokens must vote for at least the number of current producers or for a proxy" ); // <TEST> 21 producers => _gstate.maximum_producers
-      // }
    }
 
    void system_contract::update_votes( const name& voter_name, const name& proxy, const std::vector<name>& interiors, bool voting ) {

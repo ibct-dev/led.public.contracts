@@ -21,10 +21,6 @@ namespace eosiosystem {
     _voters(get_self(), get_self().value),
     _proxies(get_self(), get_self().value),
     _rammarket(get_self(), get_self().value)
-   //  _rexpool(get_self(), get_self().value),
-   //  _rexfunds(get_self(), get_self().value),
-   //  _rexbalance(get_self(), get_self().value),
-   //  _rexorders(get_self(), get_self().value)
    {
       //print( "construct system\n" );
       _gstate  = _global.exists() ? _global.get() : get_default_parameters();
@@ -355,7 +351,6 @@ namespace eosiosystem {
       });
 
       token::open_action open_act{ token_account, { {get_self(), active_permission} } };
-      // open_act.send( rex_account, core, get_self() );
 
       _gstate2.active_producers.reserve( 21 );
       _gstate2.proposed_producers.reserve( 21 );
