@@ -1022,30 +1022,31 @@ FC_LOG_AND_RETHROW()
 BOOST_FIXTURE_TEST_CASE(check_global_amount, legis_system_tester)
 try
 {
-    create_accounts_with_resources({N(defproducer1), N(frontier1.c)});
+    create_accounts_with_resources({N(defproducer1), N(frontier1.c), N(a.frontier1)});
     BOOST_REQUIRE_EQUAL(success(), activate());
-    issue("led", core_sym::from_string("4000.0000"), config::system_account_name);
+    issue("led", core_sym::from_string("5000.0000"), config::system_account_name);
     transfer("led", "alice.p", core_sym::from_string("1000.0000"), "led");
     transfer("led", "bob.p", core_sym::from_string("1000.0000"), "led");
     transfer("led", "carol.p", core_sym::from_string("1000.0000"), "led");
     transfer("led", "defproducer1", core_sym::from_string("500.0000"), "led");
     transfer("led", "frontier1.c", core_sym::from_string("500.0000"), "led");
+    transfer("led", "a.frontier1", core_sym::from_string("500.0000"), "led");
 
     // check inital staked amount
     auto gstate = get_global_state();
-    BOOST_REQUIRE_EQUAL(1000000, gstate["total_stake_amount"].as_int64());
+    BOOST_REQUIRE_EQUAL(1200000, gstate["total_stake_amount"].as_int64());
 
     // alice.p stake
     BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("200.0000"), core_sym::from_string("100.0000")));
 
     // check total staeke
     gstate = get_global_state();
-    BOOST_REQUIRE_EQUAL(4000000, gstate["total_stake_amount"].as_int64());
+    BOOST_REQUIRE_EQUAL(4200000, gstate["total_stake_amount"].as_int64());
 
     BOOST_REQUIRE_EQUAL(success(), unstake("alice.p", core_sym::from_string("100.0000"), core_sym::from_string("50.0000")));
 
     gstate = get_global_state();
-    BOOST_REQUIRE_EQUAL(2500000, gstate["total_stake_amount"].as_int64());
+    BOOST_REQUIRE_EQUAL(2700000, gstate["total_stake_amount"].as_int64());
     BOOST_REQUIRE_EQUAL(0, gstate["total_vote_amount"].as_int64());
     BOOST_REQUIRE_EQUAL(0, gstate["total_purchase_amount"].as_int64());
 
@@ -1055,7 +1056,7 @@ try
 
     // check total stake
     gstate = get_global_state();
-    BOOST_REQUIRE_EQUAL(6500000, gstate["total_stake_amount"].as_int64());
+    BOOST_REQUIRE_EQUAL(6700000, gstate["total_stake_amount"].as_int64());
 
     // check each stake
     BOOST_REQUIRE_EQUAL(1500000, get_voter_info("alice.p")["staked"].as_double());
@@ -1088,6 +1089,11 @@ try
     BOOST_REQUIRE_EQUAL(success(), buyledservice(N(carol.p), amount, N(frontier1.c)));
     gstate = get_global_state();
     BOOST_REQUIRE_EQUAL(5000000, gstate["total_purchase_amount"].as_int64());
+
+    // buyledsvcdom to a.frontier1 for frontier1.c
+    BOOST_REQUIRE_EQUAL(success(), buyledsvcdom(N(carol.p), amount, N(frontier1.c), N(a.frontier1)));
+    gstate = get_global_state();
+    BOOST_REQUIRE_EQUAL(6000000, gstate["total_purchase_amount"].as_int64());
 
 
     // pass 1 day clean purchase amount
@@ -1288,15 +1294,96 @@ try
 }
 FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(unregistered_frontier_buyservice, legis_system_tester)
+BOOST_FIXTURE_TEST_CASE(buyledsvcdom_for_frontier, legis_system_tester)
 try
 {
-    create_accounts_with_resources({N(frontier1.c)});
+    create_account_with_resources(N(frontier1.c), config::system_account_name);
+    create_account_with_resources(N(a.frontier1), config::system_account_name);
     auto ratio = asset::from_string("1.500 TEST");
     auto sym_name = ratio.get_symbol();
     BOOST_REQUIRE_EQUAL(success(), regfrontier("frontier1.c", ratio, 1));
 
     const account_name &acnt = N(frontier1.c);
+    const account_name &provider = N(a.frontier1);
+
+    //frontier_info
+    auto info = get_frontier_info(acnt);
+    BOOST_REQUIRE_EQUAL(0, info["service_weights"].as_double());
+
+    issue("led", core_sym::from_string("1000.0000"), config::system_account_name);
+    transfer("led", "alice.p", core_sym::from_string("1000.0000"), "led");
+    auto amount = asset(1000000, symbol{CORE_SYMBOL});
+
+    //user must stake before buyledsvcdom
+    BOOST_REQUIRE_EQUAL(wasm_assert_msg("user must stake before they can buy"), buyledsvcdom(N(alice.p), amount, acnt, provider));
+
+    //alice stake
+    BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
+
+    //buyserivce
+    BOOST_REQUIRE_EQUAL(success(), buyledsvcdom(N(alice.p), amount, acnt, provider));
+
+    //first buyledsvcdom is reflect in service weight for frontier
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("100.0000")) == info["service_weights"].as_double());
+    auto core_symbol_balance = get_balance(N(alice.p));
+    auto test_symbol_balance = get_balance(N(alice.p), sym_name);
+    //no payback for buyledservice
+    BOOST_REQUIRE_EQUAL(8900000, core_symbol_balance.get_amount());
+    //no dapp token for buyledservice
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
+    //check buyer table
+    auto buyers = info["buyers"].get_array();
+    BOOST_REQUIRE_EQUAL("alice.p", buyers[0]);
+
+    BOOST_REQUIRE_EQUAL(success(), buyledsvcdom(N(alice.p), amount, acnt, provider));
+    //second buyledsvcdom also reflect in service weight for frontier
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
+    core_symbol_balance = get_balance(N(alice.p));
+    test_symbol_balance = get_balance(N(alice.p), sym_name);
+    BOOST_REQUIRE_EQUAL(7900000, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
+    //check buyer table
+    buyers = info["buyers"].get_array();
+    BOOST_REQUIRE_EQUAL(1, buyers.size());
+
+    // check small amount
+    amount = asset(1001000, symbol{CORE_SYMBOL});
+    BOOST_REQUIRE_EQUAL(success(), buyledsvcdom(N(alice.p), amount, acnt, provider));
+    core_symbol_balance = get_balance(N(alice.p));
+    test_symbol_balance = get_balance(N(alice.p), sym_name);
+    BOOST_REQUIRE_EQUAL(6899000, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
+    amount = asset(1000100, symbol{CORE_SYMBOL});
+    BOOST_REQUIRE_EQUAL(success(), buyledsvcdom(N(alice.p), amount, acnt, provider));
+    core_symbol_balance = get_balance(N(alice.p));
+    test_symbol_balance = get_balance(N(alice.p), sym_name);
+    BOOST_REQUIRE_EQUAL(5898900, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
+    amount = asset(1000070, symbol{CORE_SYMBOL});
+    BOOST_REQUIRE_EQUAL(success(), buyledsvcdom(N(alice.p), amount, acnt, provider));
+    core_symbol_balance = get_balance(N(alice.p));
+    test_symbol_balance = get_balance(N(alice.p), sym_name);
+    BOOST_REQUIRE_EQUAL(4898830, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+}
+FC_LOG_AND_RETHROW()
+
+BOOST_FIXTURE_TEST_CASE(unregistered_frontier_buyservice, legis_system_tester)
+try
+{
+    create_accounts_with_resources({N(frontier1.c), N(a.frontier1)});
+    auto ratio = asset::from_string("1.500 TEST");
+    auto sym_name = ratio.get_symbol();
+    BOOST_REQUIRE_EQUAL(success(), regfrontier("frontier1.c", ratio, 1));
+
+    const account_name &acnt = N(frontier1.c);
+    const account_name &provider = N(a.frontier1);
 
     //frontier_info
     auto info = get_frontier_info(acnt);
@@ -1377,18 +1464,39 @@ try
     BOOST_REQUIRE_EQUAL(7900000, core_symbol_balance.get_amount());
     BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
 
+    // buyledsvcdom
+    BOOST_REQUIRE_EQUAL(success(), buyledsvcdom(N(bob.p), amount, acnt, provider));
+
+    //first buyledsvcdom is reflect in service weight
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("500.0000")) == info["service_weights"].as_double());
+    core_symbol_balance = get_balance(N(bob.p));
+    test_symbol_balance = get_balance(N(bob.p), sym_name);
+    //payback is not work with buyledsvcdom
+    BOOST_REQUIRE_EQUAL(6900000, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
+
+    //second buyledsvcdom also reflect in service weight
+    BOOST_REQUIRE_EQUAL(success(), buyledsvcdom(N(bob.p), amount, acnt, provider));
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("600.0000")) == info["service_weights"].as_double());
+    core_symbol_balance = get_balance(N(bob.p));
+    test_symbol_balance = get_balance(N(bob.p), sym_name);
+    BOOST_REQUIRE_EQUAL(5900000, core_symbol_balance.get_amount());
+    BOOST_REQUIRE_EQUAL(0, test_symbol_balance.get_amount());
 }
 FC_LOG_AND_RETHROW()
 
 BOOST_FIXTURE_TEST_CASE(clean_buyers, legis_system_tester)
 try
 {
-    create_accounts_with_resources({N(frontier1.c)});
+    create_accounts_with_resources({N(frontier1.c), N(a.frontier1)});
     auto ratio = asset::from_string("1.500 TEST");
     auto sym_name = ratio.get_symbol();
     BOOST_REQUIRE_EQUAL(success(), regfrontier("frontier1.c", ratio, 1));
     BOOST_REQUIRE_EQUAL(success(), activate());
     const account_name &acnt = N(frontier1.c);
+    const account_name &provider = N(a.frontier1);
 
     //frontier_info
     auto info = get_frontier_info(acnt);
@@ -1406,8 +1514,8 @@ try
     BOOST_REQUIRE_EQUAL(success(), stake("carol.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
 
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, acnt));
-    BOOST_REQUIRE_EQUAL(success(), buyservice(N(bob.p), amount, acnt));
-    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(carol.p), amount, acnt));
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(bob.p), amount, acnt));
+    BOOST_REQUIRE_EQUAL(success(), buyledsvcdom(N(carol.p), amount, acnt, provider));
 
     produce_blocks(250);
     auto producer_keys = control->head_block_state()->active_schedule.producers;
@@ -1451,12 +1559,13 @@ FC_LOG_AND_RETHROW()
 BOOST_FIXTURE_TEST_CASE(check_move_window, legis_system_tester)
 try
 {
-    create_accounts_with_resources({N(frontier1.c)});
+    create_accounts_with_resources({N(frontier1.c), N(a.frontier1)});
     auto ratio = asset::from_string("1.500 TEST");
     auto sym_name = ratio.get_symbol();
     BOOST_REQUIRE_EQUAL(success(), regfrontier("frontier1.c", ratio, 1));
     BOOST_REQUIRE_EQUAL(success(), activate());
     const account_name &acnt = N(frontier1.c);
+    const account_name &provider = N(a.frontier1);
 
     //frontier_info
     auto info = get_frontier_info(acnt);
@@ -1474,8 +1583,8 @@ try
     BOOST_REQUIRE_EQUAL(success(), stake("carol.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
 
     BOOST_REQUIRE_EQUAL(success(), buyservice(N(alice.p), amount, acnt));
-    BOOST_REQUIRE_EQUAL(success(), buyservice(N(bob.p), amount, acnt));
-    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(carol.p), amount, acnt));
+    BOOST_REQUIRE_EQUAL(success(), buyledservice(N(bob.p), amount, acnt));
+    BOOST_REQUIRE_EQUAL(success(), buyledsvcdom(N(carol.p), amount, acnt, provider));
 
     produce_blocks(250);
     auto producer_keys = control->head_block_state()->active_schedule.producers;
@@ -1506,11 +1615,12 @@ FC_LOG_AND_RETHROW()
 BOOST_FIXTURE_TEST_CASE(frontier_keep_service_weight, legis_system_tester)
 try
 {
-    create_accounts_with_resources({N(frontier1.c)});
+    create_accounts_with_resources({N(frontier1.c), N(a.frontier1)});
     auto ratio = asset::from_string("1.500 TEST");
     auto sym_name = ratio.get_symbol();
     BOOST_REQUIRE_EQUAL(success(), regfrontier("frontier1.c", ratio, 1));
     const account_name &acnt = N(frontier1.c);
+    const account_name &provider = N(a.frontier1);
 
     //frontier_info
     auto info = get_frontier_info(acnt);
@@ -1558,6 +1668,24 @@ try
     // re regfrontier must same service weight
     re_regfrontier(acnt, ratio, 1);
     BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("200.0000")) == info["service_weights"].as_double());
+
+    BOOST_REQUIRE_EQUAL(success(), buyledsvcdom(N(bob.p), amount, acnt, provider));
+
+    // first buyledsvcdom is reflect in service weight
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("300.0000")) == info["service_weights"].as_double());
+
+    // unregproducer
+    BOOST_REQUIRE_EQUAL(success(), push_action(acnt, N(unregprod), mvo()("producer", "frontier1.c")));
+
+    // service weight must same service weight
+    info = get_frontier_info(acnt);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("300.0000")) == info["service_weights"].as_double());
+
+    // re regfrontier must same service weight
+    re_regfrontier(acnt, ratio, 1);
+    BOOST_TEST_REQUIRE(stake2votes(core_sym::from_string("300.0000")) == info["service_weights"].as_double());
+
 
 }
 FC_LOG_AND_RETHROW()

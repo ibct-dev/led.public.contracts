@@ -309,6 +309,13 @@ public:
         return r;
     }
 
+    action_result buyledsvcdom(const account_name &from, const asset &amount, const account_name &to, const account_name &provider)
+    {
+        action_result r = push_action(from, N(buyledsvcdom), mvo()("buyer", from)("quantity", amount)("frontier", to)("provider", provider));
+        return r;
+    }
+
+
     action_result vote(const account_name &voter, const std::vector<account_name> &interiors, const account_name &proxy = name(0))
     {
         return push_action(voter, N(voteproducer), mvo()("voter", voter)("proxy", proxy)("interiors", interiors));
