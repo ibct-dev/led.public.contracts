@@ -445,6 +445,7 @@ namespace eosiosystem {
          static constexpr eosio::name cpay_account{"led.cpay"_n};
          static constexpr eosio::name vpay_account{"led.vpay"_n};
          static constexpr eosio::name saving_account{"led.saving"_n};
+         static constexpr eosio::name losa_account{"losa"_n};
          static constexpr eosio::name null_account{"led.null"_n};
          static constexpr symbol ramcore_symbol = symbol(symbol_code("RAMCORE"), 4);
          static constexpr symbol ram_symbol     = symbol(symbol_code("RAM"), 0);

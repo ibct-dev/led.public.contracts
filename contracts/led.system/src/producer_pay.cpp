@@ -108,8 +108,25 @@ namespace eosiosystem {
       if( usecs_since_last_fill > 0 && _gstate.last_bucket_fill > time_point() ) {
          auto new_tokens = static_cast<int64_t>( (continuous_rate * double(token_supply.amount) * double(usecs_since_last_fill)) / double(useconds_per_year) );
 
+         /* 
+            STAGE 1 ( half_year_cnt = 1 )
+               Frontier Reward : 0.3%
+               Interior Reward : 0.1%
+               Block Generation Reward: 0.1%
+               LOSA Program : 1.5%
+            STAGE 2 ( half_year_cnt = 2 )
+               Frontier Reward : 0.6%
+               Interior Reward : 0.2%
+               Block Generation Reward: 0.2%
+               LOSA Program : 1.0%
+            STAGE 3 ( half_year_cnt = 3 ) 
+               Frontier Reward : 0.9%
+               Interior Reward : 0.3%
+               Block Generation Reward: 0.3%
+               LOSA Program : 0.5%
+         */
          auto to_producers       = (new_tokens / 4) * _gstate.half_year_cnt;
-         auto to_saving          = new_tokens - to_producers;
+         auto to_losa            = new_tokens - to_producers;
          
          auto to_per_block_pay   = to_producers / 5;
          auto to_per_vote_pay    = to_producers / 5;
@@ -121,7 +138,7 @@ namespace eosiosystem {
          }
          {
             token::transfer_action transfer_act{token_account, {{get_self(), active_permission}}};
-            transfer_act.send(get_self(), saving_account, asset(to_saving, core_symbol()), "fund saving pool");
+            transfer_act.send(get_self(), losa_account, asset(to_losa, core_symbol()), "fund to LOSA program");
             transfer_act.send(get_self(), bpay_account, asset(to_per_block_pay, core_symbol()), "fund per-block bucket");
             transfer_act.send(get_self(), cpay_account, asset(to_per_ctb_pay, core_symbol()), "fund per-ctb bucket");
             transfer_act.send(get_self(), vpay_account, asset(to_per_vote_pay, core_symbol()), "fund per-vote bucket");

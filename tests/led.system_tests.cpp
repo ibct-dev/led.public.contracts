@@ -2047,7 +2047,7 @@ try
         const uint64_t initial_claim_time = microseconds_since_epoch_of_iso_string(initial_global_state["last_bucket_fill"]);
         const int64_t initial_pervote_bucket = initial_global_state["pervote_bucket"].as<int64_t>();
         const int64_t initial_perblock_bucket = initial_global_state["perblock_bucket"].as<int64_t>();
-        const int64_t initial_savings = get_balance(N(led.saving)).get_amount();
+        const int64_t initial_losa = get_balance(N(losa)).get_amount();
         const uint32_t initial_tot_unpaid_blocks = initial_global_state["total_unpaid_blocks"].as<uint32_t>();
 
         prod = get_producer_info("defproducera");
@@ -2068,7 +2068,7 @@ try
         const int64_t pervote_bucket = global_state["pervote_bucket"].as<int64_t>();
         const int64_t perblock_bucket = global_state["perblock_bucket"].as<int64_t>();
         const int64_t perctb_bucket = global_state["perctb_bucket"].as<int64_t>();
-        const int64_t savings = get_balance(N(led.saving)).get_amount();
+        const int64_t losa = get_balance(N(losa)).get_amount();
         const uint32_t tot_unpaid_blocks = global_state["total_unpaid_blocks"].as<uint32_t>();
         const auto half_year_cnt = global_state["half_year_cnt"].as<int64_t>();
         const auto vote = global_state["total_interior_vote_weight"].as_double();
@@ -2084,7 +2084,7 @@ try
         auto usecs_between_fills = claim_time - initial_claim_time;
         int32_t secs_between_fills = usecs_between_fills / 1000000;
 
-        BOOST_REQUIRE_EQUAL(0, initial_savings);
+        BOOST_REQUIRE_EQUAL(0, initial_losa);
         BOOST_REQUIRE_EQUAL(0, initial_perblock_bucket);
         BOOST_REQUIRE_EQUAL(0, initial_pervote_bucket);
 
@@ -2096,7 +2096,7 @@ try
         BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(secs_between_fills) * (3 * (continuous_rate / 4. * half_year_cnt) / 5.) / secs_per_year)) + 1,
                             ctb_balance.get_amount());
         BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(secs_between_fills) * 3 * (continuous_rate / 4.) / secs_per_year)),
-                            savings);
+                            losa);
 
         // check buckect of inflation
         BOOST_REQUIRE_EQUAL(ctb_balance.get_amount(), perctb_bucket);
@@ -2132,7 +2132,7 @@ try
         const uint64_t initial_claim_time = microseconds_since_epoch_of_iso_string(initial_global_state["last_bucket_fill"]);
         const int64_t initial_pervote_bucket = initial_global_state["pervote_bucket"].as<int64_t>();
         const int64_t initial_perblock_bucket = initial_global_state["perblock_bucket"].as<int64_t>();
-        const int64_t initial_savings = get_balance(N(led.saving)).get_amount();
+        const int64_t initial_losa = get_balance(N(losa)).get_amount();
         const uint32_t initial_tot_unpaid_blocks = initial_global_state["total_unpaid_blocks"].as<uint32_t>();
         const double initial_tot_vote_weight = initial_global_state["total_interior_vote_weight"].as<double>();
 
@@ -2155,7 +2155,7 @@ try
         const int64_t pervote_bucket = global_state["pervote_bucket"].as<int64_t>();
         const int64_t perblock_bucket = global_state["perblock_bucket"].as<int64_t>();
         const auto half_year_cnt = global_state["half_year_cnt"].as_double();
-        const int64_t savings = get_balance(N(led.saving)).get_amount();
+        const int64_t losa = get_balance(N(losa)).get_amount();
         const uint32_t tot_unpaid_blocks = global_state["total_unpaid_blocks"].as<uint32_t>();
 
         prod = get_producer_info("defproducera");
@@ -2176,7 +2176,7 @@ try
         BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(usecs_between_fills) * (3 * (continuous_rate / 4. * half_year_cnt) / 5.) / usecs_per_year)) + 2,
                             ctb_balance.get_amount() - initial_ctb_balance.get_amount());
         BOOST_REQUIRE_EQUAL(int64_t((initial_supply.get_amount() * double(usecs_between_fills) * 3 * (continuous_rate / 4.) / usecs_per_year)) + 1,
-                            savings - initial_savings);
+                            losa - initial_losa);
     }
 
     // test stability over a year
@@ -2318,7 +2318,7 @@ try
         const uint64_t initial_claim_time = microseconds_since_epoch_of_iso_string(initial_global_state["last_bucket_fill"]);
         const int64_t initial_pervote_bucket = initial_global_state["pervote_bucket"].as<int64_t>();
         const int64_t initial_perblock_bucket = initial_global_state["perblock_bucket"].as<int64_t>();
-        const int64_t initial_savings = get_balance(N(led.saving)).get_amount();
+        const int64_t initial_losa = get_balance(N(losa)).get_amount();
         const uint32_t initial_tot_unpaid_blocks = initial_global_state["total_unpaid_blocks"].as<uint32_t>();
         const asset initial_supply = get_token_supply();
         const asset initial_bpay_balance = get_balance(N(led.bpay));
@@ -2333,7 +2333,7 @@ try
         const uint64_t claim_time = microseconds_since_epoch_of_iso_string(global_state["last_bucket_fill"]);
         const int64_t pervote_bucket = global_state["pervote_bucket"].as<int64_t>();
         const int64_t perblock_bucket = global_state["perblock_bucket"].as<int64_t>();
-        const int64_t savings = get_balance(N(led.saving)).get_amount();
+        const int64_t losa = get_balance(N(losa)).get_amount();
         const uint32_t tot_unpaid_blocks = global_state["total_unpaid_blocks"].as<uint32_t>();
         const asset supply = get_token_supply();
         const asset bpay_balance = get_balance(N(led.bpay));
@@ -2346,7 +2346,7 @@ try
         const double expected_supply_growth = initial_supply.get_amount() * double(usecs_between_fills) * cont_rate / usecs_per_year;
         BOOST_REQUIRE_EQUAL(int64_t(expected_supply_growth), supply.get_amount() - initial_supply.get_amount());
 
-        BOOST_REQUIRE(within_one(3 * int64_t(expected_supply_growth) / 4 + 1, savings - initial_savings));
+        BOOST_REQUIRE(within_one(3 * int64_t(expected_supply_growth) / 4 + 1, losa - initial_losa));
 
         const int64_t expected_perblock_bucket = int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * (cont_rate / 4.) / 5. / usecs_per_year);
         const int64_t expected_pervote_bucket = int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * (cont_rate / 4.) / 5. / usecs_per_year);
@@ -2382,7 +2382,7 @@ try
         const int64_t initial_pervote_bucket = initial_global_state["pervote_bucket"].as<int64_t>();
         const int64_t initial_perblock_bucket = initial_global_state["perblock_bucket"].as<int64_t>();
         const int64_t initial_perctb_bucket = initial_global_state["perctb_bucket"].as<int64_t>();
-        const int64_t initial_savings = get_balance(N(led.saving)).get_amount();
+        const int64_t initial_losa = get_balance(N(losa)).get_amount();
         const uint32_t initial_tot_unpaid_blocks = initial_global_state["total_unpaid_blocks"].as<uint32_t>();
         const asset initial_supply = get_token_supply();
         const asset initial_bpay_balance = get_balance(N(led.bpay));
@@ -2398,7 +2398,7 @@ try
         const int64_t pervote_bucket = global_state["pervote_bucket"].as<int64_t>();
         const int64_t perblock_bucket = global_state["perblock_bucket"].as<int64_t>();
         const int64_t perctb_bucket = global_state["perctb_bucket"].as<int64_t>();
-        const int64_t savings = get_balance(N(led.saving)).get_amount();
+        const int64_t losa = get_balance(N(losa)).get_amount();
         const uint32_t tot_unpaid_blocks = global_state["total_unpaid_blocks"].as<uint32_t>();
         const asset supply = get_token_supply();
         const asset bpay_balance = get_balance(N(led.bpay));
@@ -2412,7 +2412,7 @@ try
         const double expected_supply_growth = initial_supply.get_amount() * double(usecs_between_fills) * cont_rate / usecs_per_year;
         BOOST_REQUIRE_EQUAL(int64_t(expected_supply_growth), supply.get_amount() - initial_supply.get_amount());
 
-        BOOST_REQUIRE(within_one(3 * int64_t(expected_supply_growth) / 4 + 1, savings - initial_savings));
+        BOOST_REQUIRE(within_one(3 * int64_t(expected_supply_growth) / 4 + 1, losa - initial_losa));
 
         const int64_t expected_perblock_bucket = initial_perblock_bucket + int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * (cont_rate / 4.) / 5. / usecs_per_year);
         const int64_t expected_perctb_bucket = initial_perctb_bucket + int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * 3 * (cont_rate / 4.) / 5. / usecs_per_year);
@@ -2468,7 +2468,7 @@ try
         const int64_t initial_pervote_bucket = initial_global_state["pervote_bucket"].as<int64_t>();
         const int64_t initial_perblock_bucket = initial_global_state["perblock_bucket"].as<int64_t>();
         const int64_t initial_perctb_bucket = initial_global_state["perctb_bucket"].as<int64_t>();
-        const int64_t initial_savings = get_balance(N(led.saving)).get_amount();
+        const int64_t initial_losa = get_balance(N(losa)).get_amount();
         const uint32_t initial_tot_unpaid_blocks = initial_global_state["total_unpaid_blocks"].as<uint32_t>();
         const asset initial_supply = get_token_supply();
         const asset initial_bpay_balance = get_balance(N(led.bpay));
@@ -2483,7 +2483,7 @@ try
         const int64_t pervote_bucket = global_state["pervote_bucket"].as<int64_t>();
         const int64_t perblock_bucket = global_state["perblock_bucket"].as<int64_t>();
         const int64_t perctb_bucket = global_state["perctb_bucket"].as<int64_t>();
-        const int64_t savings = get_balance(N(led.saving)).get_amount();
+        const int64_t losa = get_balance(N(losa)).get_amount();
         const uint32_t tot_unpaid_blocks = global_state["total_unpaid_blocks"].as<uint32_t>();
         const asset supply = get_token_supply();
         const asset bpay_balance = get_balance(N(led.bpay));
@@ -2496,7 +2496,7 @@ try
         const double expected_supply_growth = initial_supply.get_amount() * double(usecs_between_fills) * cont_rate / usecs_per_year;
         BOOST_REQUIRE_EQUAL(int64_t(expected_supply_growth), supply.get_amount() - initial_supply.get_amount());
 
-        BOOST_REQUIRE(within_one(3 * int64_t(expected_supply_growth) / 4, savings - initial_savings));
+        BOOST_REQUIRE(within_one(3 * int64_t(expected_supply_growth) / 4, losa - initial_losa));
 
         const int64_t expected_perblock_bucket = int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * cont_rate / 4. / 5. / usecs_per_year) + initial_perblock_bucket;
         const int64_t expected_pervote_bucket = int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * cont_rate / 4. / 5. / usecs_per_year) + initial_pervote_bucket;

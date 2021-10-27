@@ -39,7 +39,7 @@ public:
 
         create_accounts({N(led.token), N(led.ram), N(led.ramfee), N(led.stake),
                          N(led.cpay), N(led.pback), N(led.bpay),
-                         N(led.vpay), N(led.saving), N(led.names), N(ibct)
+                         N(led.vpay), N(led.saving), N(led.names), N(losa), N(ibct)
                         });
 
         produce_blocks(100);
@@ -452,6 +452,13 @@ public:
         produce_block(fc::seconds(52 * 7 * 24 * 3600 / 2));
         produce_blocks();
         produce_block(fc::seconds(52 * 7 * 24 * 3600 / 2));
+        produce_blocks();
+    }
+
+    void active_and_pass_half_year()
+    {
+        activate();
+        produce_block(fc::seconds(26 * 7 * 24 * 3600 / 2));
         produce_blocks();
     }
 
