@@ -17,7 +17,7 @@ namespace eosio {
         auto sym = mx_sup.symbol;
         check(sym.is_valid(), "invalid symbol name");
         check(mx_sup.is_valid(), "invalid supply");
-        check(mx_sup.amount != asset::max_amount, "token must not be nft");
+        // check(mx_sup.amount != asset::max_amount, "token must not be nft");
         if (!mx_sup.amount) mx_sup.amount = asset::max_amount - 1;
         check(mx_sup.amount > 0, "max-supply must be positive");
 
@@ -62,7 +62,7 @@ namespace eosio {
         check(sym.is_valid(), "invalid symbol name");
         check(memo.size() <= 256, "memo has more than 256 bytes");
 
-        check_nft(quantity);
+        // check_nft(quantity);
         check_frozen( to );
 
         stats statstable(get_self(), sym.code().raw());
@@ -92,7 +92,7 @@ namespace eosio {
         auto sym = quantity.symbol;
         check(sym.is_valid(), "invalid symbol name");
 
-        check_nft(quantity);
+        // check_nft(quantity);
         check_frozen( owner );
 
         check(memo.size() <= 256, "memo has more than 256 bytes");
@@ -137,7 +137,7 @@ namespace eosio {
         auto sym = quantity.symbol;
         check(sym.is_valid(), "invalid symbol name");
 
-        check_nft(quantity);
+        // check_nft(quantity);
         check_frozen( owner );
 
         check(memo.size() <= 256, "memo has more than 256 bytes");
@@ -179,7 +179,7 @@ namespace eosio {
         auto sym = quantity.symbol;
         check(sym.is_valid(), "invalid symbol name");
 
-        check_nft(quantity);
+        // check_nft(quantity);
         check_frozen( from );
 
         stats statstable(get_self(), sym.code().raw());
@@ -219,7 +219,7 @@ namespace eosio {
         auto sym = quantity.symbol;
         check(sym.is_valid(), "invalid symbol name");
 
-        check_nft(quantity);
+        // check_nft(quantity);
         check_frozen( owner );
 
         stats statstable(get_self(), sym.code().raw());
@@ -262,7 +262,7 @@ namespace eosio {
         auto sym = quantity.symbol;
         check(sym.is_valid(), "invalid symbol name");
 
-        check_nft(quantity);
+        // check_nft(quantity);
         check_frozen( from );
 
         stats statstable(get_self(), sym.code().raw());
@@ -297,7 +297,7 @@ namespace eosio {
         auto sym = quantity.symbol;
         check(sym.is_valid(), "invalid symbol name");
 
-        check_nft(quantity);
+        // check_nft(quantity);
         check_frozen( owner );
 
         accounts acnts(get_self(), owner.value);
@@ -321,7 +321,7 @@ namespace eosio {
         auto sym = quantity.symbol;
         check(sym.is_valid(), "invalid symbol name");
 
-        check_nft(quantity);
+        // check_nft(quantity);
         check_frozen( owner );
 
         allowances allws(get_self(), owner.value);
@@ -367,371 +367,371 @@ namespace eosio {
         acnts.erase(existing_ac);
     }
 
-    ACTION token::createnft( const name& issuer, const string& sym ) {
-        if (has_auth( "ibct"_n )) {
-            require_auth( "ibct"_n );
-        }
-        else {
-            require_auth(get_self());
-        }
-
-        // Check if issuer account exists
-        check(is_account(issuer), "issuer account does not exist");
-
-        check_frozen( issuer );
-
-        // Valid symbol
-        asset supply(0, symbol(symbol_code(sym.c_str()), 0));
-
-        auto symbol = supply.symbol;
-        check(symbol.is_valid(), "invalid symbol name");
-
-        // Check if currency with symbol already exists
-        stats statstable(get_self(), symbol.code().raw());
-        auto existing_st = statstable.find(symbol.code().raw());
-        check(existing_st == statstable.end(), "symbol already exists");
-
-        // Create new currency
-        statstable.emplace(get_self(), [&](auto& s) {
-            s.supply = supply;
-            s.max_supply = asset{asset::max_amount, symbol};
-            s.issuer = issuer;
-        });
-    }
-
-    ACTION token::issuenft( const name& to, const asset& quantity, const vector<std::pair<uint64_t, name>>& token_infos, const string& memo ) {
-        check(is_account(to), "to account does not exist");
-
-        check_frozen( to );
-
-        auto sym = quantity.symbol;
-        check(sym.is_valid(), "invalid symbol name");
-        check(sym.precision() == 0, "quantity must be a whole number");
-        check(memo.size() <= 256, "memo has more than 256 bytes");
-
-        stats statstable(get_self(), sym.code().raw());
-        auto existing_st = statstable.find(sym.code().raw());
-        check(existing_st != statstable.end(), "token with symbol does not exist, create token before issue");
-        const auto& st = *existing_st;
-
-        require_auth(st.issuer);
-        check(quantity.is_valid(), "invalid quantity");
-        check(quantity.amount > 0, "must issue positive quantity of NFT");
-        check(sym == st.supply.symbol, "symbol precision mismatch");
-        check(quantity.amount == token_infos.size(), "mismatch between issue amount and token info");
-
-        statstable.modify(st, same_payer, [&](auto& s) {
-            s.supply += quantity;
-        });
-
-        nfts nftstable(get_self(), sym.code().raw());
-
-        auto payer = has_auth(to) ? to : st.issuer;
-
-        for (auto const& tk : token_infos) {
-            auto existing_nft = nftstable.find(tk.first);
-            check(existing_nft == nftstable.end(), "token with symbol already exists");
-            nftstable.emplace(payer, [&](auto& nft) {
-                nft.token_id = tk.first;
-                nft.owner = to;
-                nft.tokenName = tk.second;
-                nft.spender = to;
-            });
-        }
-        add_balance(to, quantity, payer);
-    }
-
-    ACTION token::burnnft( const name& owner, const asset& quantity, const vector<uint64_t>& token_ids, const string& memo ) {
-        require_auth(owner);
+    // ACTION token::createnft( const name& issuer, const string& sym ) {
+    //     if (has_auth( "ibct"_n )) {
+    //         require_auth( "ibct"_n );
+    //     }
+    //     else {
+    //         require_auth(get_self());
+    //     }
+
+    //     // Check if issuer account exists
+    //     check(is_account(issuer), "issuer account does not exist");
+
+    //     check_frozen( issuer );
+
+    //     // Valid symbol
+    //     asset supply(0, symbol(symbol_code(sym.c_str()), 0));
+
+    //     auto symbol = supply.symbol;
+    //     check(symbol.is_valid(), "invalid symbol name");
+
+    //     // Check if currency with symbol already exists
+    //     stats statstable(get_self(), symbol.code().raw());
+    //     auto existing_st = statstable.find(symbol.code().raw());
+    //     check(existing_st == statstable.end(), "symbol already exists");
+
+    //     // Create new currency
+    //     statstable.emplace(get_self(), [&](auto& s) {
+    //         s.supply = supply;
+    //         s.max_supply = asset{asset::max_amount, symbol};
+    //         s.issuer = issuer;
+    //     });
+    // }
+
+    // ACTION token::issuenft( const name& to, const asset& quantity, const vector<std::pair<uint64_t, name>>& token_infos, const string& memo ) {
+    //     check(is_account(to), "to account does not exist");
+
+    //     check_frozen( to );
+
+    //     auto sym = quantity.symbol;
+    //     check(sym.is_valid(), "invalid symbol name");
+    //     check(sym.precision() == 0, "quantity must be a whole number");
+    //     check(memo.size() <= 256, "memo has more than 256 bytes");
+
+    //     stats statstable(get_self(), sym.code().raw());
+    //     auto existing_st = statstable.find(sym.code().raw());
+    //     check(existing_st != statstable.end(), "token with symbol does not exist, create token before issue");
+    //     const auto& st = *existing_st;
+
+    //     require_auth(st.issuer);
+    //     check(quantity.is_valid(), "invalid quantity");
+    //     check(quantity.amount > 0, "must issue positive quantity of NFT");
+    //     check(sym == st.supply.symbol, "symbol precision mismatch");
+    //     check(quantity.amount == token_infos.size(), "mismatch between issue amount and token info");
+
+    //     statstable.modify(st, same_payer, [&](auto& s) {
+    //         s.supply += quantity;
+    //     });
+
+    //     nfts nftstable(get_self(), sym.code().raw());
+
+    //     auto payer = has_auth(to) ? to : st.issuer;
+
+    //     for (auto const& tk : token_infos) {
+    //         auto existing_nft = nftstable.find(tk.first);
+    //         check(existing_nft == nftstable.end(), "token with symbol already exists");
+    //         nftstable.emplace(payer, [&](auto& nft) {
+    //             nft.token_id = tk.first;
+    //             nft.owner = to;
+    //             nft.tokenName = tk.second;
+    //             nft.spender = to;
+    //         });
+    //     }
+    //     add_balance(to, quantity, payer);
+    // }
+
+    // ACTION token::burnnft( const name& owner, const asset& quantity, const vector<uint64_t>& token_ids, const string& memo ) {
+    //     require_auth(owner);
 
-        check_frozen( owner );
-
-        auto sym = quantity.symbol;
-        check(sym.is_valid(), "invalid symbol name");
-        check(sym.precision() == 0, "quantity must be a whole number");
-
-        check(memo.size() <= 256, "memo has more than 256 bytes");
+    //     check_frozen( owner );
+
+    //     auto sym = quantity.symbol;
+    //     check(sym.is_valid(), "invalid symbol name");
+    //     check(sym.precision() == 0, "quantity must be a whole number");
+
+    //     check(memo.size() <= 256, "memo has more than 256 bytes");
 
-        check(quantity.is_valid(), "invalid quantity");
-        check(quantity.amount > 0, "must burn positive quantity");
-        check(quantity.amount == token_ids.size(), "mismatch between burn amount and token info");
+    //     check(quantity.is_valid(), "invalid quantity");
+    //     check(quantity.amount > 0, "must burn positive quantity");
+    //     check(quantity.amount == token_ids.size(), "mismatch between burn amount and token info");
 
-        stats statstable(get_self(), sym.code().raw());
-        auto existing_st = statstable.find(sym.code().raw());
-        check(existing_st != statstable.end(), "symbol does not exist at stats");
-        const auto& st = *existing_st;
-
-        nfts nftstable(get_self(), sym.code().raw());
-        for (auto const& token_id : token_ids) {
-            auto existing_nft = nftstable.find(token_id);
-            check(existing_nft != nftstable.end(), "token with symbol does not exists");
-            check(existing_nft->owner == owner, "not the owner of token");
-            nftstable.erase(existing_nft);
-        }
+    //     stats statstable(get_self(), sym.code().raw());
+    //     auto existing_st = statstable.find(sym.code().raw());
+    //     check(existing_st != statstable.end(), "symbol does not exist at stats");
+    //     const auto& st = *existing_st;
+
+    //     nfts nftstable(get_self(), sym.code().raw());
+    //     for (auto const& token_id : token_ids) {
+    //         auto existing_nft = nftstable.find(token_id);
+    //         check(existing_nft != nftstable.end(), "token with symbol does not exists");
+    //         check(existing_nft->owner == owner, "not the owner of token");
+    //         nftstable.erase(existing_nft);
+    //     }
 
-        sub_balance(owner, quantity);
-        statstable.modify(st, same_payer, [&](auto& s) {
-            s.supply -= quantity;
-        });
-    }
+    //     sub_balance(owner, quantity);
+    //     statstable.modify(st, same_payer, [&](auto& s) {
+    //         s.supply -= quantity;
+    //     });
+    // }
 
-    ACTION token::burnnftfrom( const name& burner, const string& sym, id_type token_id, const string& memo ) {
-        require_auth(burner);
+    // ACTION token::burnnftfrom( const name& burner, const string& sym, id_type token_id, const string& memo ) {
+    //     require_auth(burner);
 
-        asset as(0, symbol(symbol_code(sym.c_str()), 0));
-        auto symbol = as.symbol;
-        check(symbol.is_valid(), "invalid symbol name");
-        check(memo.size() <= 256, "memo has more than 256 bytes");
+    //     asset as(0, symbol(symbol_code(sym.c_str()), 0));
+    //     auto symbol = as.symbol;
+    //     check(symbol.is_valid(), "invalid symbol name");
+    //     check(memo.size() <= 256, "memo has more than 256 bytes");
 
-        stats statstable(get_self(), symbol.code().raw());
-        auto existing_st = statstable.find(symbol.code().raw());
-        check(existing_st != statstable.end(), "symbol does not exist at stats");
-        const auto& st = *existing_st;
+    //     stats statstable(get_self(), symbol.code().raw());
+    //     auto existing_st = statstable.find(symbol.code().raw());
+    //     check(existing_st != statstable.end(), "symbol does not exist at stats");
+    //     const auto& st = *existing_st;
 
-        nfts nftstable(get_self(), symbol.code().raw());
-        auto existing_nft = nftstable.find(token_id);
-        check(existing_nft != nftstable.end(), "token with symbol does not exists");
+    //     nfts nftstable(get_self(), symbol.code().raw());
+    //     auto existing_nft = nftstable.find(token_id);
+    //     check(existing_nft != nftstable.end(), "token with symbol does not exists");
 
-        check_frozen( existing_nft->owner );
+    //     check_frozen( existing_nft->owner );
 
-        require_recipient(existing_nft->owner);
+    //     require_recipient(existing_nft->owner);
 
-        check(burner == existing_nft->spender, "burner is not token spender");
+    //     check(burner == existing_nft->spender, "burner is not token spender");
 
-        asset unit(1, symbol);
+    //     asset unit(1, symbol);
 
-        sub_balance(existing_nft->owner, unit);
+    //     sub_balance(existing_nft->owner, unit);
 
-        nftstable.erase(existing_nft);
-        statstable.modify(st, same_payer, [&](auto& s) {
-            s.supply -= unit;
-        });
-    }
+    //     nftstable.erase(existing_nft);
+    //     statstable.modify(st, same_payer, [&](auto& s) {
+    //         s.supply -= unit;
+    //     });
+    // }
 
-    ACTION token::send( const name& from, const name& to, const string& sym, id_type token_id, const string& memo ) {
-        check(from != to, "cannot transfer to self");
-        require_auth(from);
-        check(is_account(to), "to account does not exist");
+    // ACTION token::send( const name& from, const name& to, const string& sym, id_type token_id, const string& memo ) {
+    //     check(from != to, "cannot transfer to self");
+    //     require_auth(from);
+    //     check(is_account(to), "to account does not exist");
 
-        require_recipient(from);
-        require_recipient(to);
+    //     require_recipient(from);
+    //     require_recipient(to);
 
-        asset as(0, symbol(symbol_code(sym.c_str()), 0));
-        auto symbol = as.symbol;
+    //     asset as(0, symbol(symbol_code(sym.c_str()), 0));
+    //     auto symbol = as.symbol;
 
-        check(symbol.is_valid(), "invalid symbol name");
-        check(memo.size() <= 256, "memo has more than 256 bytes");
+    //     check(symbol.is_valid(), "invalid symbol name");
+    //     check(memo.size() <= 256, "memo has more than 256 bytes");
 
-        nfts nftstable(get_self(), symbol.code().raw());
-        auto existing_nft = nftstable.find(token_id);
-        check(existing_nft != nftstable.end(), "token with symbol does not exists");
-        check(from == existing_nft->owner, "not the owner of token");
-        check(existing_nft->spender != get_self(), "if spender is get_self(), it can not transfer");
+    //     nfts nftstable(get_self(), symbol.code().raw());
+    //     auto existing_nft = nftstable.find(token_id);
+    //     check(existing_nft != nftstable.end(), "token with symbol does not exists");
+    //     check(from == existing_nft->owner, "not the owner of token");
+    //     check(existing_nft->spender != get_self(), "if spender is get_self(), it can not transfer");
 
-        check_frozen( existing_nft->owner );
+    //     check_frozen( existing_nft->owner );
 
-        auto payer = has_auth(to) ? to : from;
+    //     auto payer = has_auth(to) ? to : from;
 
-        nftstable.modify(existing_nft, payer, [&](auto& nft) {
-            nft.owner = to;
-            nft.spender = to;
-        });
+    //     nftstable.modify(existing_nft, payer, [&](auto& nft) {
+    //         nft.owner = to;
+    //         nft.spender = to;
+    //     });
 
-        asset unit(1, symbol);
+    //     asset unit(1, symbol);
 
-        sub_balance(from, unit);
-        add_balance(to, unit, payer);
-    }
+    //     sub_balance(from, unit);
+    //     add_balance(to, unit, payer);
+    // }
 
-    ACTION token::approvenft( const name& owner, const name& spender, const string& sym, id_type token_id ) {
-        require_auth(owner);
-        check_frozen( owner );
+    // ACTION token::approvenft( const name& owner, const name& spender, const string& sym, id_type token_id ) {
+    //     require_auth(owner);
+    //     check_frozen( owner );
 
-        asset as(0, symbol(symbol_code(sym.c_str()), 0));
-        auto symbol = as.symbol;
+    //     asset as(0, symbol(symbol_code(sym.c_str()), 0));
+    //     auto symbol = as.symbol;
 
-        check(symbol.is_valid(), "invalid symbol name");
+    //     check(symbol.is_valid(), "invalid symbol name");
 
-        nfts nftstable(get_self(), symbol.code().raw());
-        auto existing_nft = nftstable.find(token_id);
-        check(existing_nft != nftstable.end(), "token with symbol does not exists");
-        check(owner == existing_nft->owner, "not the owner of token");
-        check(owner == get_self() || existing_nft->spender != get_self(), "if spender is get_self(), it can not be changed");
+    //     nfts nftstable(get_self(), symbol.code().raw());
+    //     auto existing_nft = nftstable.find(token_id);
+    //     check(existing_nft != nftstable.end(), "token with symbol does not exists");
+    //     check(owner == existing_nft->owner, "not the owner of token");
+    //     check(owner == get_self() || existing_nft->spender != get_self(), "if spender is get_self(), it can not be changed");
 
-        nftstable.modify(existing_nft, same_payer, [&](auto& nft) {
-            nft.spender = spender;
-        });
-    }
+    //     nftstable.modify(existing_nft, same_payer, [&](auto& nft) {
+    //         nft.spender = spender;
+    //     });
+    // }
 
-    ACTION token::sendfrom( const name& spender, const name& to, const string& sym, id_type token_id, const string& memo ) {
-        require_auth(spender);
+    // ACTION token::sendfrom( const name& spender, const name& to, const string& sym, id_type token_id, const string& memo ) {
+    //     require_auth(spender);
 
-        check(is_account(to), "to account does not exist");
+    //     check(is_account(to), "to account does not exist");
 
-        asset as(0, symbol(symbol_code(sym.c_str()), 0));
-        auto symbol = as.symbol;
+    //     asset as(0, symbol(symbol_code(sym.c_str()), 0));
+    //     auto symbol = as.symbol;
 
-        check(symbol.is_valid(), "invalid symbol name");
-        check(memo.size() <= 256, "memo has more than 256 bytes");
+    //     check(symbol.is_valid(), "invalid symbol name");
+    //     check(memo.size() <= 256, "memo has more than 256 bytes");
 
-        nfts nftstable(get_self(), symbol.code().raw());
-        auto existing_nft = nftstable.find(token_id);
-        check(existing_nft != nftstable.end(), "token with symbol does not exists");
-        check(spender == existing_nft->spender, "spender is not token spender");
-        check(spender != existing_nft->owner, "spender and owner must be different");
-        name owner = existing_nft->owner;
+    //     nfts nftstable(get_self(), symbol.code().raw());
+    //     auto existing_nft = nftstable.find(token_id);
+    //     check(existing_nft != nftstable.end(), "token with symbol does not exists");
+    //     check(spender == existing_nft->spender, "spender is not token spender");
+    //     check(spender != existing_nft->owner, "spender and owner must be different");
+    //     name owner = existing_nft->owner;
 
-        check_frozen( owner );
+    //     check_frozen( owner );
 
-        require_recipient(owner);
-        require_recipient(to);
+    //     require_recipient(owner);
+    //     require_recipient(to);
 
-        auto payer = has_auth(to) ? to : spender;
+    //     auto payer = has_auth(to) ? to : spender;
 
-        nftstable.modify(existing_nft, payer, [&](auto& nft) {
-            nft.owner = to;
-            nft.spender = to;
-        });
+    //     nftstable.modify(existing_nft, payer, [&](auto& nft) {
+    //         nft.owner = to;
+    //         nft.spender = to;
+    //     });
 
-        asset unit(1, symbol);
+    //     asset unit(1, symbol);
 
-        sub_balance(owner, unit);
-        add_balance(to, unit, payer);
-    }
+    //     sub_balance(owner, unit);
+    //     add_balance(to, unit, payer);
+    // }
 
-    ACTION token::auctiontoken( const name& auctioneer, const string& sym, id_type token_id, const asset& min_price, uint32_t sec ) {
-        require_auth(auctioneer);
+    // ACTION token::auctiontoken( const name& auctioneer, const string& sym, id_type token_id, const asset& min_price, uint32_t sec ) {
+    //     require_auth(auctioneer);
 
-        check_frozen( auctioneer );
+    //     check_frozen( auctioneer );
 
-        require_recipient(auctioneer);
+    //     require_recipient(auctioneer);
 
-        asset as(0, symbol(symbol_code(sym.c_str()), 0));
-        auto symbol = as.symbol;
-        check(symbol.is_valid(), "invalid symbol name");
+    //     asset as(0, symbol(symbol_code(sym.c_str()), 0));
+    //     auto symbol = as.symbol;
+    //     check(symbol.is_valid(), "invalid symbol name");
 
-        check(sec > 0 && sec < 259200, "sec must be a positive integer and can not exceed three days");
+    //     check(sec > 0 && sec < 259200, "sec must be a positive integer and can not exceed three days");
 
-        const time_point_sec deadline = time_point_sec(current_time_point().sec_since_epoch()) + sec;
+    //     const time_point_sec deadline = time_point_sec(current_time_point().sec_since_epoch()) + sec;
 
-        nfts nftstable(get_self(), symbol.code().raw());
-        auto existing_nft = nftstable.find(token_id);
-        check(existing_nft != nftstable.end(), "token with symbol does not exists");
-        check(existing_nft->owner == auctioneer, "not the owner of token");
+    //     nfts nftstable(get_self(), symbol.code().raw());
+    //     auto existing_nft = nftstable.find(token_id);
+    //     check(existing_nft != nftstable.end(), "token with symbol does not exists");
+    //     check(existing_nft->owner == auctioneer, "not the owner of token");
 
-        nft_bids nftbidstable(get_self(), symbol.code().raw());
-        auto existing_bid = nftbidstable.find(token_id);
-        check(existing_bid == nftbidstable.end(), "token bid already exist");
+    //     nft_bids nftbidstable(get_self(), symbol.code().raw());
+    //     auto existing_bid = nftbidstable.find(token_id);
+    //     check(existing_bid == nftbidstable.end(), "token bid already exist");
 
-        check(min_price.amount > 0, "minimum price must be a positive integer");
+    //     check(min_price.amount > 0, "minimum price must be a positive integer");
 
-        stats statstable(get_self(), min_price.symbol.code().raw());
-        auto existing_st = statstable.find(min_price.symbol.code().raw());
-        check(existing_st != statstable.end(), "minimum price symbol does not exist at stats");
+    //     stats statstable(get_self(), min_price.symbol.code().raw());
+    //     auto existing_st = statstable.find(min_price.symbol.code().raw());
+    //     check(existing_st != statstable.end(), "minimum price symbol does not exist at stats");
 
-        nftbidstable.emplace(auctioneer, [&](auto& b) {
-            b.token_id = token_id;
-            b.high_bidder = auctioneer;
-            b.high_bid = min_price;
-            b.deadline = deadline;
-        });
+    //     nftbidstable.emplace(auctioneer, [&](auto& b) {
+    //         b.token_id = token_id;
+    //         b.high_bidder = auctioneer;
+    //         b.high_bid = min_price;
+    //         b.deadline = deadline;
+    //     });
 
-        nftstable.modify(existing_nft, same_payer, [&](auto& nft) {
-            nft.spender = get_self();
-        });
-    }
+    //     nftstable.modify(existing_nft, same_payer, [&](auto& nft) {
+    //         nft.spender = get_self();
+    //     });
+    // }
 
-    ACTION token::bidtoken( const name& bidder, const string& sym, id_type token_id, const asset& bid ) {
-        require_auth(bidder);
-        check_frozen( bidder );
+    // ACTION token::bidtoken( const name& bidder, const string& sym, id_type token_id, const asset& bid ) {
+    //     require_auth(bidder);
+    //     check_frozen( bidder );
 
-        require_recipient(bidder);
+    //     require_recipient(bidder);
 
-        asset as(0, symbol(symbol_code(sym.c_str()), 0));
-        auto symbol = as.symbol;
-        check(symbol.is_valid(), "invalid symbol name");
+    //     asset as(0, symbol(symbol_code(sym.c_str()), 0));
+    //     auto symbol = as.symbol;
+    //     check(symbol.is_valid(), "invalid symbol name");
 
-        nfts nftstable(get_self(), symbol.code().raw());
-        auto existing_nft = nftstable.find(token_id);
-        check(existing_nft != nftstable.end(), "token with symbol does not exists");
+    //     nfts nftstable(get_self(), symbol.code().raw());
+    //     auto existing_nft = nftstable.find(token_id);
+    //     check(existing_nft != nftstable.end(), "token with symbol does not exists");
 
-        check(bidder != existing_nft->owner, "token owners can not bid");
+    //     check(bidder != existing_nft->owner, "token owners can not bid");
 
-        nft_bids nftbidstable(get_self(), symbol.code().raw());
-        auto existing_bid = nftbidstable.find(token_id);
-        check(existing_bid != nftbidstable.end(), "token auction is not exist");
-        check(bid.symbol == existing_bid->high_bid.symbol, "bid symbol is not correct");
-        check(bid.amount > existing_bid->high_bid.amount, "the bid amount is insufficient");
+    //     nft_bids nftbidstable(get_self(), symbol.code().raw());
+    //     auto existing_bid = nftbidstable.find(token_id);
+    //     check(existing_bid != nftbidstable.end(), "token auction is not exist");
+    //     check(bid.symbol == existing_bid->high_bid.symbol, "bid symbol is not correct");
+    //     check(bid.amount > existing_bid->high_bid.amount, "the bid amount is insufficient");
 
-        const time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
-        check(existing_bid->deadline > time_now, "the auction deadline has passed");
+    //     const time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
+    //     check(existing_bid->deadline > time_now, "the auction deadline has passed");
 
-        if (existing_bid->high_bidder != existing_nft->owner) {
-            // refund
-            action(
-                permission_level{get_self(), "active"_n},
-                get_self(), "transfer"_n,
-                std::make_tuple(get_self(), existing_bid->high_bidder, existing_bid->high_bid, std::string("refund bidding fee")))
-                .send();
-        }
+    //     if (existing_bid->high_bidder != existing_nft->owner) {
+    //         // refund
+    //         action(
+    //             permission_level{get_self(), "active"_n},
+    //             get_self(), "transfer"_n,
+    //             std::make_tuple(get_self(), existing_bid->high_bidder, existing_bid->high_bid, std::string("refund bidding fee")))
+    //             .send();
+    //     }
 
-        // new high bidder
-        nftbidstable.modify(existing_bid, same_payer, [&](auto& b) {
-            b.high_bidder = bidder;
-            b.high_bid = bid;
-        });
+    //     // new high bidder
+    //     nftbidstable.modify(existing_bid, same_payer, [&](auto& b) {
+    //         b.high_bidder = bidder;
+    //         b.high_bid = bid;
+    //     });
 
-        sub_balance(bidder, bid);
-        add_balance(get_self(), bid, get_self());
+    //     sub_balance(bidder, bid);
+    //     add_balance(get_self(), bid, get_self());
 
-        bidresult_action bid_act(bidder, std::vector<eosio::permission_level>{});
-        bid_act.send(bid);
-    }
+    //     bidresult_action bid_act(bidder, std::vector<eosio::permission_level>{});
+    //     bid_act.send(bid);
+    // }
 
-    ACTION token::claimtoken( const name& requester, const string& sym, id_type token_id ) {
-        require_auth(requester);
-        check_frozen( requester );
+    // ACTION token::claimtoken( const name& requester, const string& sym, id_type token_id ) {
+    //     require_auth(requester);
+    //     check_frozen( requester );
 
-        require_recipient(requester);
+    //     require_recipient(requester);
 
-        asset as(0, symbol(symbol_code(sym.c_str()), 0));
-        auto symbol = as.symbol;
-        check(symbol.is_valid(), "invalid symbol name");
+    //     asset as(0, symbol(symbol_code(sym.c_str()), 0));
+    //     auto symbol = as.symbol;
+    //     check(symbol.is_valid(), "invalid symbol name");
 
-        nfts nftstable(get_self(), symbol.code().raw());
-        auto existing_nft = nftstable.find(token_id);
-        check(existing_nft != nftstable.end(), "token with symbol does not exists");
+    //     nfts nftstable(get_self(), symbol.code().raw());
+    //     auto existing_nft = nftstable.find(token_id);
+    //     check(existing_nft != nftstable.end(), "token with symbol does not exists");
 
-        nft_bids nftbidstable(get_self(), symbol.code().raw());
-        auto existing_bid = nftbidstable.find(token_id);
-        check(existing_bid != nftbidstable.end(), "token auction is not exist");
+    //     nft_bids nftbidstable(get_self(), symbol.code().raw());
+    //     auto existing_bid = nftbidstable.find(token_id);
+    //     check(existing_bid != nftbidstable.end(), "token auction is not exist");
 
-        const time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
-        check(existing_bid->deadline <= time_now, "deadline not over");
-        check(requester == existing_nft->owner || requester == existing_bid->high_bidder, "the requester is not authorized");
+    //     const time_point_sec time_now = time_point_sec(current_time_point().sec_since_epoch());
+    //     check(existing_bid->deadline <= time_now, "deadline not over");
+    //     check(requester == existing_nft->owner || requester == existing_bid->high_bidder, "the requester is not authorized");
 
-        if (existing_bid->high_bidder != existing_nft->owner) {
-            // bidding fee payment
-            action(
-                permission_level{get_self(), "active"_n},
-                get_self(), "transfer"_n,
-                std::make_tuple(get_self(), existing_nft->owner, existing_bid->high_bid, std::string("receive auction sale money")))
-                .send();
+    //     if (existing_bid->high_bidder != existing_nft->owner) {
+    //         // bidding fee payment
+    //         action(
+    //             permission_level{get_self(), "active"_n},
+    //             get_self(), "transfer"_n,
+    //             std::make_tuple(get_self(), existing_nft->owner, existing_bid->high_bid, std::string("receive auction sale money")))
+    //             .send();
 
-            // nft ownership change
-            action(
-                permission_level{get_self(), "active"_n},
-                get_self(), "sendfrom"_n,
-                std::make_tuple(get_self(), existing_bid->high_bidder, sym, token_id, std::string("receive auction tokens")))
-                .send();
-        } else {
-            nftstable.modify(existing_nft, same_payer, [&](auto& nft) {
-                nft.spender = existing_nft->owner;
-            });
-        }
+    //         // nft ownership change
+    //         action(
+    //             permission_level{get_self(), "active"_n},
+    //             get_self(), "sendfrom"_n,
+    //             std::make_tuple(get_self(), existing_bid->high_bidder, sym, token_id, std::string("receive auction tokens")))
+    //             .send();
+    //     } else {
+    //         nftstable.modify(existing_nft, same_payer, [&](auto& nft) {
+    //             nft.spender = existing_nft->owner;
+    //         });
+    //     }
 
-        nftbidstable.erase(existing_bid);
-    }
+    //     nftbidstable.erase(existing_bid);
+    // }
 
     void token::freeze( const name& account ) {
         if (has_auth( "ibct"_n )) {
@@ -796,13 +796,13 @@ namespace eosio {
         }
     }
 
-    void token::check_nft( const asset& quantity ) {
-        auto sym = quantity.symbol;
+    // void token::check_nft( const asset& quantity ) {
+    //     auto sym = quantity.symbol;
 
-        stats statstable(get_self(), sym.code().raw());
-        auto existing_st = statstable.find(sym.code().raw());
-        check(existing_st->max_supply.amount != asset::max_amount, "nft token symbol");
-    }
+    //     stats statstable(get_self(), sym.code().raw());
+    //     auto existing_st = statstable.find(sym.code().raw());
+    //     check(existing_st->max_supply.amount != asset::max_amount, "nft token symbol");
+    // }
 
     void token::check_frozen( const name& account ) {
         frozens frozenstable( get_self(), get_self().value );
