@@ -188,17 +188,30 @@ namespace eosiosystem {
          p.unpaid_blocks   = 0;
       });
 
+      /* temporary send 15% to led.saving */
       if ( producer_per_block_pay > 0 ) {
+         int64_t to_led_saving = producer_per_block_pay * 0.15;
+         producer_per_block_pay -= to_led_saving;
          token::transfer_action transfer_act{ token_account, { {bpay_account, active_permission}, {owner, active_permission} } };
+         token::transfer_action transfer_temp{ token_account, { {bpay_account, active_permission}, {saving_account, active_permission} } };
          transfer_act.send( bpay_account, owner, asset(producer_per_block_pay, core_symbol()), "producer block pay" );
+         transfer_temp.send( bpay_account, saving_account, asset(to_led_saving, core_symbol()), "to saving" );
       }
       if ( interior_per_vote_pay > 0 ) {
+         int64_t to_led_saving = interior_per_vote_pay * 0.15;
+         interior_per_vote_pay -= to_led_saving;
          token::transfer_action transfer_act{ token_account, { {vpay_account, active_permission}, {owner, active_permission} } };
+         token::transfer_action transfer_temp{ token_account, { {vpay_account, active_permission}, {saving_account, active_permission} } };
          transfer_act.send( vpay_account, owner, asset(interior_per_vote_pay, core_symbol()), "producer vote pay" );
+         transfer_temp.send( vpay_account, saving_account, asset(to_led_saving, core_symbol()), "to saving" );
       }
       if ( frontier_per_ctb_pay > 0 ) {
+         int64_t to_led_saving = frontier_per_ctb_pay * 0.15;
+         frontier_per_ctb_pay -= to_led_saving;
          token::transfer_action transfer_act{ token_account, { {cpay_account, active_permission}, {owner, active_permission} } };
+         token::transfer_action transfer_temp{ token_account, { {cpay_account, active_permission}, {saving_account, active_permission} } };
          transfer_act.send( cpay_account, owner, asset(frontier_per_ctb_pay, core_symbol()), "producer contribution pay" );
+         transfer_temp.send( cpay_account, saving_account, asset(to_led_saving, core_symbol()), "to saving" );
       }
    }
 
