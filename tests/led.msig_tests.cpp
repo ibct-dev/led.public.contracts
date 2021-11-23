@@ -414,7 +414,7 @@ BOOST_FIXTURE_TEST_CASE( update_system_contract_all_approve, led_msig_tester ) t
    set_producers( {N(alice),N(bob),N(carol)} );
    produce_blocks(50);
 
-   create_accounts( { N(led.token), N(led.rex) } );
+   create_accounts( { N(led.token) } );
    set_code( N(led.token), contracts::token_wasm() );
    set_abi( N(led.token), contracts::token_abi().data() );
 
@@ -533,7 +533,7 @@ BOOST_FIXTURE_TEST_CASE( update_system_contract_major_approve, led_msig_tester )
    set_producers( {N(alice),N(bob),N(carol), N(apple)} );
    produce_blocks(50);
 
-   create_accounts( { N(led.token), N(led.rex) } );
+   create_accounts( { N(led.token) } );
    set_code( N(led.token), contracts::token_wasm() );
    set_abi( N(led.token), contracts::token_abi().data() );
 

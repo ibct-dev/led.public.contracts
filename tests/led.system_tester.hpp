@@ -38,8 +38,9 @@ public:
         produce_blocks(2);
 
         create_accounts({N(led.token), N(led.ram), N(led.ramfee), N(led.stake),
-                         N(led.cpay), N(led.pback), N(led.rexpay), N(led.bpay),
-                         N(led.vpay), N(led.saving), N(led.names), N(led.rex), N(ibct)});
+                         N(led.cpay), N(led.pback), N(led.bpay),
+                         N(led.vpay), N(led.saving), N(led.names), N(losa), N(ibct)
+                        });
 
         produce_blocks(100);
         set_code(N(led.token), contracts::token_wasm());
@@ -302,327 +303,22 @@ public:
         return r;
     }
 
+    action_result buyledservice(const account_name &from, const asset &amount, const account_name &to)
+    {
+        action_result r = push_action(from, N(buyledservice), mvo()("buyer", from)("quantity", amount)("frontier", to));
+        return r;
+    }
+
+    action_result buyledsvcdom(const account_name &from, const asset &amount, const account_name &to, const account_name &provider)
+    {
+        action_result r = push_action(from, N(buyledsvcdom), mvo()("buyer", from)("quantity", amount)("frontier", to)("provider", provider));
+        return r;
+    }
+
+
     action_result vote(const account_name &voter, const std::vector<account_name> &interiors, const account_name &proxy = name(0))
     {
         return push_action(voter, N(voteproducer), mvo()("voter", voter)("proxy", proxy)("interiors", interiors));
-    }
-
-    action_result deposit(const account_name &owner, const asset &amount)
-    {
-        return push_action(name(owner), N(deposit), mvo()("owner", owner)("amount", amount));
-    }
-
-    action_result withdraw(const account_name &owner, const asset &amount)
-    {
-        return push_action(name(owner), N(withdraw), mvo()("owner", owner)("amount", amount));
-    }
-
-    action_result buyrex(const account_name &from, const asset &amount)
-    {
-        return push_action(name(from), N(buyrex), mvo()("from", from)("amount", amount));
-    }
-
-    action_result sellrex(const account_name &from, const asset &rex)
-    {
-        return push_action(name(from), N(sellrex), mvo()("from", from)("rex", rex));
-    }
-
-    asset get_buyrex_result(const account_name &from, const asset &amount)
-    {
-        auto trace = base_tester::push_action(config::system_account_name, N(buyrex), from, mvo()("from", from)("amount", amount));
-        asset rex_received;
-        for (size_t i = 0; i < trace->action_traces.size(); ++i)
-        {
-            if (trace->action_traces[i].act.name == N(buyresult))
-            {
-                fc::raw::unpack(trace->action_traces[i].act.data.data(),
-                                trace->action_traces[i].act.data.size(),
-                                rex_received);
-                return rex_received;
-            }
-        }
-        return rex_received;
-    }
-
-    action_result unstaketorex(const account_name &owner, const account_name &receiver, const asset &from_net, const asset &from_cpu)
-    {
-        return push_action(name(owner), N(unstaketorex), mvo()("owner", owner)("receiver", receiver)("from_net", from_net)("from_cpu", from_cpu));
-    }
-
-    asset get_unstaketorex_result(const account_name &owner, const account_name &receiver, const asset &from_net, const asset &from_cpu)
-    {
-        auto trace = base_tester::push_action(config::system_account_name, N(unstaketorex), owner, mvo()("owner", owner)("receiver", receiver)("from_net", from_net)("from_cpu", from_cpu));
-        asset rex_received;
-        for (size_t i = 0; i < trace->action_traces.size(); ++i)
-        {
-            if (trace->action_traces[i].act.name == N(buyresult))
-            {
-                fc::raw::unpack(trace->action_traces[i].act.data.data(),
-                                trace->action_traces[i].act.data.size(),
-                                rex_received);
-                return rex_received;
-            }
-        }
-        return rex_received;
-    }
-
-    asset get_sellrex_result(const account_name &from, const asset &rex)
-    {
-        auto trace = base_tester::push_action(config::system_account_name, N(sellrex), from, mvo()("from", from)("rex", rex));
-        asset proceeds;
-        for (size_t i = 0; i < trace->action_traces.size(); ++i)
-        {
-            if (trace->action_traces[i].act.name == N(sellresult))
-            {
-                fc::raw::unpack(trace->action_traces[i].act.data.data(),
-                                trace->action_traces[i].act.data.size(),
-                                proceeds);
-                return proceeds;
-            }
-        }
-        return proceeds;
-    }
-
-    auto get_rexorder_result(const transaction_trace_ptr &trace)
-    {
-        std::vector<std::pair<account_name, asset>> output;
-        for (size_t i = 0; i < trace->action_traces.size(); ++i)
-        {
-            if (trace->action_traces[i].act.name == N(orderresult))
-            {
-                fc::datastream<const char *> ds(trace->action_traces[i].act.data.data(),
-                                                trace->action_traces[i].act.data.size());
-                account_name owner;
-                fc::raw::unpack(ds, owner);
-                asset proceeds;
-                fc::raw::unpack(ds, proceeds);
-                output.emplace_back(owner, proceeds);
-            }
-        }
-        return output;
-    }
-
-    action_result cancelrexorder(const account_name &owner)
-    {
-        return push_action(name(owner), N(cnclrexorder), mvo()("owner", owner));
-    }
-
-    action_result leasecpu(const account_name &from, const account_name &receiver, const asset &payment, const asset &fund = core_sym::from_string("0.0000"))
-    {
-        return push_action(name(from), N(leasecpu), mvo()("from", from)("receiver", receiver)("loan_payment", payment)("loan_fund", fund));
-    }
-
-    action_result leasenet(const account_name &from, const account_name &receiver, const asset &payment, const asset &fund = core_sym::from_string("0.0000"))
-    {
-        return push_action(name(from), N(leasenet), mvo()("from", from)("receiver", receiver)("loan_payment", payment)("loan_fund", fund));
-    }
-
-    asset _get_leaserex_result(const account_name &from, const account_name &receiver, const asset &payment, bool cpu)
-    {
-        const name act = cpu ? N(leasecpu) : N(leasenet);
-        auto trace = base_tester::push_action(config::system_account_name, act, from, mvo()("from", from)("receiver", receiver)("loan_payment", payment)("loan_fund", core_sym::from_string("0.0000")));
-
-        asset leaseed_tokens = core_sym::from_string("0.0000");
-        for (size_t i = 0; i < trace->action_traces.size(); ++i)
-        {
-            if (trace->action_traces[i].act.name == N(leaseresult))
-            {
-                fc::raw::unpack(trace->action_traces[i].act.data.data(),
-                                trace->action_traces[i].act.data.size(),
-                                leaseed_tokens);
-                return leaseed_tokens;
-            }
-        }
-        return leaseed_tokens;
-    }
-
-    asset get_leasecpu_result(const account_name &from, const account_name &receiver, const asset &payment)
-    {
-        return _get_leaserex_result(from, receiver, payment, true);
-    }
-
-    asset get_leasenet_result(const account_name &from, const account_name &receiver, const asset &payment)
-    {
-        return _get_leaserex_result(from, receiver, payment, false);
-    }
-
-    action_result fundcpuloan(const account_name &from, const uint64_t loan_num, const asset &payment)
-    {
-        return push_action(name(from), N(fundcpuloan), mvo()("from", from)("loan_num", loan_num)("payment", payment));
-    }
-
-    action_result fundnetloan(const account_name &from, const uint64_t loan_num, const asset &payment)
-    {
-        return push_action(name(from), N(fundnetloan), mvo()("from", from)("loan_num", loan_num)("payment", payment));
-    }
-
-    action_result defundcpuloan(const account_name &from, const uint64_t loan_num, const asset &amount)
-    {
-        return push_action(name(from), N(defcpuloan), mvo()("from", from)("loan_num", loan_num)("amount", amount));
-    }
-
-    action_result defundnetloan(const account_name &from, const uint64_t loan_num, const asset &amount)
-    {
-        return push_action(name(from), N(defnetloan), mvo()("from", from)("loan_num", loan_num)("amount", amount));
-    }
-
-    action_result updaterex(const account_name &owner)
-    {
-        return push_action(name(owner), N(updaterex), mvo()("owner", owner));
-    }
-
-    action_result rexexec(const account_name &user, uint16_t max)
-    {
-        return push_action(name(user), N(rexexec), mvo()("user", user)("max", max));
-    }
-
-    action_result consolidate(const account_name &owner)
-    {
-        return push_action(name(owner), N(consolidate), mvo()("owner", owner));
-    }
-
-    action_result mvtosavings(const account_name &owner, const asset &rex)
-    {
-        return push_action(name(owner), N(mvtosavings), mvo()("owner", owner)("rex", rex));
-    }
-
-    action_result mvfrsavings(const account_name &owner, const asset &rex)
-    {
-        return push_action(name(owner), N(mvfrsavings), mvo()("owner", owner)("rex", rex));
-    }
-
-    action_result closerex(const account_name &owner)
-    {
-        return push_action(name(owner), N(closerex), mvo()("owner", owner));
-    }
-
-    fc::variant get_last_loan(bool cpu)
-    {
-        vector<char> data;
-        const auto &db = control->db();
-        namespace chain = eosio::chain;
-        auto table = cpu ? N(cpuloan) : N(netloan);
-        const auto *t_id = db.find<eosio::chain::table_id_object, chain::by_code_scope_table>(boost::make_tuple(config::system_account_name, config::system_account_name, table));
-        if (!t_id)
-        {
-            return fc::variant();
-        }
-
-        const auto &idx = db.get_index<chain::key_value_index, chain::by_scope_primary>();
-
-        auto itr = idx.upper_bound(boost::make_tuple(t_id->id, std::numeric_limits<uint64_t>::max()));
-        if (itr == idx.begin())
-        {
-            return fc::variant();
-        }
-        --itr;
-        if (itr->t_id != t_id->id)
-        {
-            return fc::variant();
-        }
-
-        data.resize(itr->value.size());
-        memcpy(data.data(), itr->value.data(), data.size());
-        return data.empty() ? fc::variant() : abi_ser.binary_to_variant("rex_loan", data, abi_serializer_max_time);
-    }
-
-    fc::variant get_last_cpu_loan()
-    {
-        return get_last_loan(true);
-    }
-
-    fc::variant get_last_net_loan()
-    {
-        return get_last_loan(false);
-    }
-
-    fc::variant get_loan_info(const uint64_t &loan_num, bool cpu) const
-    {
-        name table_name = cpu ? N(cpuloan) : N(netloan);
-        vector<char> data = get_row_by_account(config::system_account_name, config::system_account_name, table_name, account_name(loan_num));
-        return data.empty() ? fc::variant() : abi_ser.binary_to_variant("rex_loan", data, abi_serializer_max_time);
-    }
-
-    fc::variant get_cpu_loan(const uint64_t loan_num) const
-    {
-        return get_loan_info(loan_num, true);
-    }
-
-    fc::variant get_net_loan(const uint64_t loan_num) const
-    {
-        return get_loan_info(loan_num, false);
-    }
-
-    fc::variant get_dbw_obj(const account_name &from, const account_name &receiver) const
-    {
-        vector<char> data = get_row_by_account(config::system_account_name, from, N(delband), receiver);
-        return data.empty() ? fc::variant() : abi_ser.binary_to_variant("delegated_bandwidth", data, abi_serializer_max_time);
-    }
-
-    asset get_rex_balance(const account_name &act) const
-    {
-        vector<char> data = get_row_by_account(config::system_account_name, config::system_account_name, N(rexbal), act);
-        return data.empty() ? asset(0, symbol(SY(4, REX))) : abi_ser.binary_to_variant("rex_balance", data, abi_serializer_max_time)["rex_balance"].as<asset>();
-    }
-
-    fc::variant get_rex_balance_obj(const account_name &act) const
-    {
-        vector<char> data = get_row_by_account(config::system_account_name, config::system_account_name, N(rexbal), act);
-        return data.empty() ? fc::variant() : abi_ser.binary_to_variant("rex_balance", data, abi_serializer_max_time);
-    }
-
-    asset get_rex_fund(const account_name &act) const
-    {
-        vector<char> data = get_row_by_account(config::system_account_name, config::system_account_name, N(rexfund), act);
-        return data.empty() ? asset(0, symbol{CORE_SYM}) : abi_ser.binary_to_variant("rex_fund", data, abi_serializer_max_time)["balance"].as<asset>();
-    }
-
-    fc::variant get_rex_fund_obj(const account_name &act) const
-    {
-        vector<char> data = get_row_by_account(config::system_account_name, config::system_account_name, N(rexfund), act);
-        return data.empty() ? fc::variant() : abi_ser.binary_to_variant("rex_fund", data, abi_serializer_max_time);
-    }
-
-    asset get_rex_vote_stake(const account_name &act) const
-    {
-        vector<char> data = get_row_by_account(config::system_account_name, config::system_account_name, N(rexbal), act);
-        return data.empty() ? core_sym::from_string("0.0000") : abi_ser.binary_to_variant("rex_balance", data, abi_serializer_max_time)["vote_stake"].as<asset>();
-    }
-
-    fc::variant get_rex_order(const account_name &act)
-    {
-        vector<char> data = get_row_by_account(config::system_account_name, config::system_account_name, N(rexqueue), act);
-        return abi_ser.binary_to_variant("rex_order", data, abi_serializer_max_time);
-    }
-
-    fc::variant get_rex_order_obj(const account_name &act)
-    {
-        vector<char> data = get_row_by_account(config::system_account_name, config::system_account_name, N(rexqueue), act);
-        return data.empty() ? fc::variant() : abi_ser.binary_to_variant("rex_order", data, abi_serializer_max_time);
-    }
-
-    fc::variant get_rex_pool() const
-    {
-        vector<char> data;
-        const auto &db = control->db();
-        namespace chain = eosio::chain;
-        const auto *t_id = db.find<eosio::chain::table_id_object, chain::by_code_scope_table>(boost::make_tuple(config::system_account_name, config::system_account_name, N(rexpool)));
-        if (!t_id)
-        {
-            return fc::variant();
-        }
-
-        const auto &idx = db.get_index<chain::key_value_index, chain::by_scope_primary>();
-
-        auto itr = idx.lower_bound(boost::make_tuple(t_id->id, 0));
-        if (itr == idx.end() || itr->t_id != t_id->id || 0 != itr->primary_key)
-        {
-            return fc::variant();
-        }
-
-        data.resize(itr->value.size());
-        memcpy(data.data(), itr->value.data(), data.size());
-        return data.empty() ? fc::variant() : abi_ser.binary_to_variant("rex_pool", data, abi_serializer_max_time);
     }
 
     uint32_t last_block_time() const
@@ -759,6 +455,13 @@ public:
         produce_blocks();
     }
 
+    void active_and_pass_half_year()
+    {
+        activate();
+        produce_block(fc::seconds(26 * 7 * 24 * 3600 / 2));
+        produce_blocks();
+    }
+
     vector<name> active_and_vote_producers()
     {
         activate();
@@ -819,35 +522,6 @@ public:
         BOOST_REQUIRE_EQUAL(name("defproducera"), producer_keys[0].producer_name);
 
         return producer_names;
-    }
-
-    void setup_rex_accounts(const std::vector<account_name> &accounts,
-                            const asset &init_balance,
-                            const asset &net = core_sym::from_string("80.0000"),
-                            const asset &cpu = core_sym::from_string("80.0000"),
-                            bool deposit_into_rex_fund = true)
-    {
-        const asset nstake = core_sym::from_string("10.0000");
-        const asset cstake = core_sym::from_string("10.0000");
-        create_account_with_resources(N(proxy.p), config::system_account_name, core_sym::from_string("1.0000"), false, net, cpu);
-        transfer(config::system_account_name, N(proxy.p), init_balance + nstake + cstake, config::system_account_name);
-        BOOST_REQUIRE_EQUAL(success(), stake(N(proxy.p), N(proxy.p), nstake, cstake));
-        BOOST_REQUIRE_EQUAL(success(), regproxy(N(proxy.p)));
-        for (const auto &a : accounts)
-        {
-            create_account_with_resources(a, config::system_account_name, core_sym::from_string("1.0000"), false, net, cpu);
-            transfer(config::system_account_name, a, init_balance + nstake + cstake, config::system_account_name);
-            BOOST_REQUIRE_EQUAL(success(), stake(a, a, nstake, cstake));
-            BOOST_REQUIRE_EQUAL(success(), vote(a, {}, N(proxy.p)));
-            BOOST_REQUIRE_EQUAL(init_balance, get_balance(a));
-            BOOST_REQUIRE_EQUAL(asset::from_string("0.0000 REX"), get_rex_balance(a));
-            if (deposit_into_rex_fund)
-            {
-                BOOST_REQUIRE_EQUAL(success(), deposit(a, init_balance));
-                BOOST_REQUIRE_EQUAL(init_balance, get_rex_fund(a));
-                BOOST_REQUIRE_EQUAL(0, get_balance(a).get_amount());
-            }
-        }
     }
 
     abi_serializer initialize_multisig()

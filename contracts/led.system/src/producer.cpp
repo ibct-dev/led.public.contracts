@@ -361,7 +361,7 @@ namespace eosiosystem {
       }
 
       //KYC Logic
-      if ( isPerson( buyer ) && !fitr->buyer_exists( buyer ) ){
+      if ( isPerson( buyer ) ){
          // Buy Service에 해당하는 service weight를 증가
          double service_weight = stake2vote(int64_t(quantity.amount));
          _frontiers.modify( fitr, same_payer, [&]( auto& f ) {
@@ -370,10 +370,12 @@ namespace eosiosystem {
          });
 
          // Payback
-         auto payback_token = asset(static_cast<int64_t>(quantity.amount * 0.05), quantity.symbol);
-         {
-            token::transfer_action frontier_payback_transfer_act{token_account, {frontier, active_permission}};
-            frontier_payback_transfer_act.send(frontier, buyer, payback_token, "frontier payback");
+         if(!fitr->buyer_exists( buyer )){
+            auto payback_token = asset(static_cast<int64_t>(quantity.amount * 0.05), quantity.symbol);
+            {
+               token::transfer_action frontier_payback_transfer_act{token_account, {frontier, active_permission}};
+               frontier_payback_transfer_act.send(frontier, buyer, payback_token, "frontier payback");
+            }
          }
          
          auto buyer_itr = _buyers.find( buyer.value );
@@ -387,22 +389,128 @@ namespace eosiosystem {
                b.cumulative_payback += quantity.amount * 0.05;
             });
          }
+         
+         if(!fitr->buyer_exists( buyer )){
+            _frontiers.modify( fitr, frontier, [&]( frontier_info& info ){
+               info.buyers.push_back( buyer );
+            });
+         }
+      }
+      _gstate.total_purchase_amount += quantity.amount;
+   }
 
-         _frontiers.modify( fitr, frontier, [&]( frontier_info& info ){
-            info.buyers.push_back( buyer );
+   void system_contract::buyledservice( const name& buyer, const asset& quantity, const name& frontier ) {
+      require_auth( buyer );
+      require_recipient( buyer );
+      require_recipient( frontier );
+
+      check( buyer != frontier, "cannot buy from self" );
+      check( quantity.is_valid(), "invalid quantity" );
+      check( quantity.symbol.code() == core_symbol().code(), "this token is not system token" );
+      check( quantity.amount > 0, "must positive quantity" );
+
+      auto from_voter = _voters.find( buyer.value );
+      check( from_voter != _voters.end(), "user must stake before they can buy" ); /// staking creates voter object
+
+      accounts fromBuyer(token_account, buyer.value);
+      const auto& bn = fromBuyer.get( core_symbol().code().raw(), "buyer does not have a core symbol" );
+      check( quantity.amount <= bn.balance.amount, "There is not enough system tokens to buy" );
+
+      auto pitr = _producers.find( frontier.value );
+      auto fitr = _frontiers.find( frontier.value );
+      check( pitr != _producers.end() && fitr != _frontiers.end(), "target frontier is not exist" );
+      check( pitr->active(), "frontier is not currently registered" );
+      
+      // frontier에게 service fee 송금
+      {
+         token::transfer_action buyer_transfer_act{token_account, {buyer, active_permission}};
+         buyer_transfer_act.send(buyer, frontier, quantity, "service fee");
+      }
+
+      //KYC Logic
+      if ( isPerson( buyer ) ){
+         // Buy Service에 해당하는 service weight를 증가
+         double service_weight = stake2vote(int64_t(quantity.amount));
+         _frontiers.modify( fitr, same_payer, [&]( auto& f ) {
+            f.set_service_weight(service_weight);
+            _gstate.total_frontier_service_weight += service_weight;
          });
+         
+         auto buyer_itr = _buyers.find( buyer.value );
+         if( buyer_itr == _buyers.end() ) {
+            _buyers.emplace( buyer, [&]( auto& b ) {
+               b.owner              = buyer;
+            });
+         }
+         
+         if(!fitr->buyer_exists( buyer )){
+            _frontiers.modify( fitr, frontier, [&]( frontier_info& info ){
+               info.buyers.push_back( buyer );
+            });
+         }
+      }
+      _gstate.total_purchase_amount += quantity.amount;
+   }
+
+   void system_contract::buyledsvcdom( const name& buyer, const asset& quantity, const name& frontier, const name& provider ) {
+      require_auth( buyer );
+      require_recipient( buyer );
+      require_recipient( frontier );
+      require_recipient( provider );
+
+      check( buyer != provider, "cannot buy from self" );
+      check( provider != frontier, "cannot same provider and frontier" );
+      check( name(provider.suffix().to_string() + ".c") == frontier, "provider must be sub-account of frontier");
+      check( quantity.is_valid(), "invalid quantity" );
+      check( quantity.symbol.code() == core_symbol().code(), "this token is not system token" );
+      check( quantity.amount > 0, "must positive quantity" );
+
+      auto from_voter = _voters.find( buyer.value );
+      check( from_voter != _voters.end(), "user must stake before they can buy" ); /// staking creates voter object
+
+      accounts fromBuyer(token_account, buyer.value);
+      const auto& bn = fromBuyer.get( core_symbol().code().raw(), "buyer does not have a core symbol" );
+      check( quantity.amount <= bn.balance.amount, "There is not enough system tokens to buy" );
+
+      auto pitr = _producers.find( frontier.value );
+      auto fitr = _frontiers.find( frontier.value );
+      check( pitr != _producers.end() && fitr != _frontiers.end(), "target frontier is not exist" );
+      check( pitr->active(), "frontier is not currently registered" );
+      
+      // 실 서비스 제공자인 provider에게 service fee 송금
+      {
+         token::transfer_action buyer_transfer_act{token_account, {buyer, active_permission}};
+         buyer_transfer_act.send(buyer, provider, quantity, "service fee");
+      }
+
+      //KYC Logic
+      if ( isPerson( buyer ) ){
+         // Buy Service에 해당하는 service weight를 frontier의 것으로 증가
+         double service_weight = stake2vote(int64_t(quantity.amount));
+         _frontiers.modify( fitr, same_payer, [&]( auto& f ) {
+            f.set_service_weight(service_weight);
+            _gstate.total_frontier_service_weight += service_weight;
+         });
+         
+         auto buyer_itr = _buyers.find( buyer.value );
+         if( buyer_itr == _buyers.end() ) {
+            _buyers.emplace( buyer, [&]( auto& b ) {
+               b.owner              = buyer;
+            });
+         }
+         
+         if(!fitr->buyer_exists( buyer )){
+            _frontiers.modify( fitr, frontier, [&]( frontier_info& info ){
+               info.buyers.push_back( buyer );
+            });
+         }
       }
       _gstate.total_purchase_amount += quantity.amount;
    }
 
    void system_contract::voteproducer( const name& voter, const name& proxy, const std::vector<name>& interiors ) {
       require_auth( voter );
-      vote_stake_updater( voter );
       update_votes( voter, proxy, interiors, true );
-      auto rex_itr = _rexbalance.find( voter.value );
-      if( rex_itr != _rexbalance.end() && rex_itr->rex_balance.amount > 0 ) {
-         check_voting_requirement( voter, "voter holding REX tokens must vote for at least the number of current producers or for a proxy" ); // <TEST> 21 producers => _gstate.maximum_producers
-      }
    }
 
    void system_contract::update_votes( const name& voter_name, const name& proxy, const std::vector<name>& interiors, bool voting ) {

@@ -108,9 +108,25 @@ namespace eosiosystem {
       if( usecs_since_last_fill > 0 && _gstate.last_bucket_fill > time_point() ) {
          auto new_tokens = static_cast<int64_t>( (continuous_rate * double(token_supply.amount) * double(usecs_since_last_fill)) / double(useconds_per_year) );
 
+         /* 
+            STAGE 1 ( half_year_cnt = 1 )
+               Frontier Reward : 0.3%
+               Interior Reward : 0.1%
+               Block Generation Reward: 0.1%
+               LOSA Program : 1.5%
+            STAGE 2 ( half_year_cnt = 2 )
+               Frontier Reward : 0.6%
+               Interior Reward : 0.2%
+               Block Generation Reward: 0.2%
+               LOSA Program : 1.0%
+            STAGE 3 ( half_year_cnt = 3 ) 
+               Frontier Reward : 0.9%
+               Interior Reward : 0.3%
+               Block Generation Reward: 0.3%
+               LOSA Program : 0.5%
+         */
          auto to_producers       = (new_tokens / 4) * _gstate.half_year_cnt;
-         auto to_rexpool         = (new_tokens / 4);
-         auto to_saving          = new_tokens - (to_producers + to_rexpool);
+         auto to_losa            = new_tokens - to_producers;
          
          auto to_per_block_pay   = to_producers / 5;
          auto to_per_vote_pay    = to_producers / 5;
@@ -118,17 +134,15 @@ namespace eosiosystem {
          
          {
             token::issue_action issue_act{token_account, {{get_self(), active_permission}}};
-            issue_act.send(get_self(), asset(new_tokens, core_symbol()), "issue tokens for producer pay and rexpools");
+            issue_act.send(get_self(), asset(new_tokens, core_symbol()), "issue tokens for producer pay");
          }
          {
             token::transfer_action transfer_act{token_account, {{get_self(), active_permission}}};
-            transfer_act.send(get_self(), rexpay_account, asset(to_rexpool, core_symbol()), "fund rex pool");
-            transfer_act.send(get_self(), saving_account, asset(to_saving, core_symbol()), "fund saving pool");
+            transfer_act.send(get_self(), losa_account, asset(to_losa, core_symbol()), "fund to LOSA program");
             transfer_act.send(get_self(), bpay_account, asset(to_per_block_pay, core_symbol()), "fund per-block bucket");
             transfer_act.send(get_self(), cpay_account, asset(to_per_ctb_pay, core_symbol()), "fund per-ctb bucket");
             transfer_act.send(get_self(), vpay_account, asset(to_per_vote_pay, core_symbol()), "fund per-vote bucket");
          }
-         channel_to_rex(rexpay_account, asset(to_rexpool, core_symbol()));
 
          _gstate.perblock_bucket += to_per_block_pay;
          _gstate.perctb_bucket   += to_per_ctb_pay;
@@ -174,17 +188,30 @@ namespace eosiosystem {
          p.unpaid_blocks   = 0;
       });
 
+      /* temporary send 15% to led.saving */
       if ( producer_per_block_pay > 0 ) {
+         int64_t to_led_saving = producer_per_block_pay * 0.15;
+         producer_per_block_pay -= to_led_saving;
          token::transfer_action transfer_act{ token_account, { {bpay_account, active_permission}, {owner, active_permission} } };
+         token::transfer_action transfer_temp{ token_account, { {bpay_account, active_permission}, {saving_account, active_permission} } };
          transfer_act.send( bpay_account, owner, asset(producer_per_block_pay, core_symbol()), "producer block pay" );
+         transfer_temp.send( bpay_account, saving_account, asset(to_led_saving, core_symbol()), "to saving" );
       }
       if ( interior_per_vote_pay > 0 ) {
+         int64_t to_led_saving = interior_per_vote_pay * 0.15;
+         interior_per_vote_pay -= to_led_saving;
          token::transfer_action transfer_act{ token_account, { {vpay_account, active_permission}, {owner, active_permission} } };
+         token::transfer_action transfer_temp{ token_account, { {vpay_account, active_permission}, {saving_account, active_permission} } };
          transfer_act.send( vpay_account, owner, asset(interior_per_vote_pay, core_symbol()), "producer vote pay" );
+         transfer_temp.send( vpay_account, saving_account, asset(to_led_saving, core_symbol()), "to saving" );
       }
       if ( frontier_per_ctb_pay > 0 ) {
+         int64_t to_led_saving = frontier_per_ctb_pay * 0.15;
+         frontier_per_ctb_pay -= to_led_saving;
          token::transfer_action transfer_act{ token_account, { {cpay_account, active_permission}, {owner, active_permission} } };
+         token::transfer_action transfer_temp{ token_account, { {cpay_account, active_permission}, {saving_account, active_permission} } };
          transfer_act.send( cpay_account, owner, asset(frontier_per_ctb_pay, core_symbol()), "producer contribution pay" );
+         transfer_temp.send( cpay_account, saving_account, asset(to_led_saving, core_symbol()), "to saving" );
       }
    }
 
