@@ -55,7 +55,20 @@ namespace eosiosystem {
 
       _producers.modify( prod, producer, [&]( producer_info& info ){
          info.is_punished = false;
+         info.is_active = true;
       });
+
+      if(prod->producer_type == 1) {
+         auto fitr = _frontiers.find( producer.value );
+         _frontiers.modify( fitr, same_payer, [&]( frontier_info& info ) {
+            info.is_active = true;
+         });
+      } else {
+         auto iitr = _interiors.find( producer.value );
+         _interiors.modify( iitr, same_payer, [&]( interior_info& info ) {
+            info.is_active = true;
+         });
+      }
    }
 
    void system_contract::regfrontier( const name& frontier, const public_key& producer_key, const asset& transfer_ratio, uint8_t category, const std::string& url, uint16_t location, const std::string& logo_256 ) {

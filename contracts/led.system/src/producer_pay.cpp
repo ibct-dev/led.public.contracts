@@ -166,16 +166,16 @@ namespace eosiosystem {
          if( _gstate.total_interior_vote_weight > 0 ) {
             interior_per_vote_pay = int64_t((_gstate.pervote_bucket * iitr->vote_weights) / _gstate.total_interior_vote_weight);
          }
-         if( interior_per_vote_pay < min_daily_pay ) {
-            interior_per_vote_pay = 0;
-         }
+         // if( interior_per_vote_pay < min_daily_pay ) {
+         //    interior_per_vote_pay = 0;
+         // }
       } else if ( fitr != _frontiers.end() ) {
          if( _gstate.total_frontier_service_weight > 0 ) {
             frontier_per_ctb_pay = int64_t((_gstate.perctb_bucket * fitr->service_weights) / _gstate.total_frontier_service_weight);
          }
-         if( frontier_per_ctb_pay < min_daily_pay ) {
-            frontier_per_ctb_pay = 0;
-         }
+         // if( frontier_per_ctb_pay < min_daily_pay ) {
+         //    frontier_per_ctb_pay = 0;
+         // }
       }
       
       _gstate.pervote_bucket      -= interior_per_vote_pay;
