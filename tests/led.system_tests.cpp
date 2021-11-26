@@ -2048,6 +2048,7 @@ try
         const int64_t initial_pervote_bucket = initial_global_state["pervote_bucket"].as<int64_t>();
         const int64_t initial_perblock_bucket = initial_global_state["perblock_bucket"].as<int64_t>();
         const int64_t initial_losa = get_balance(N(losa)).get_amount();
+        const int64_t initial_saving = get_balance(N(led.saving)).get_amount();
         const uint32_t initial_tot_unpaid_blocks = initial_global_state["total_unpaid_blocks"].as<uint32_t>();
 
         prod = get_producer_info("defproducera");
@@ -2069,6 +2070,7 @@ try
         const int64_t perblock_bucket = global_state["perblock_bucket"].as<int64_t>();
         const int64_t perctb_bucket = global_state["perctb_bucket"].as<int64_t>();
         const int64_t losa = get_balance(N(losa)).get_amount();
+        const int64_t saving = get_balance(N(led.saving)).get_amount();
         const uint32_t tot_unpaid_blocks = global_state["total_unpaid_blocks"].as<uint32_t>();
         const auto half_year_cnt = global_state["half_year_cnt"].as<int64_t>();
         const auto vote = global_state["total_interior_vote_weight"].as_double();
@@ -2085,13 +2087,14 @@ try
         int32_t secs_between_fills = usecs_between_fills / 1000000;
 
         BOOST_REQUIRE_EQUAL(0, initial_losa);
+        BOOST_REQUIRE_EQUAL(0, initial_saving);
         BOOST_REQUIRE_EQUAL(0, initial_perblock_bucket);
         BOOST_REQUIRE_EQUAL(0, initial_pervote_bucket);
 
         // check balance of inflation
         BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(secs_between_fills) * continuous_rate) / secs_per_year),
                             supply.get_amount() - initial_supply.get_amount());
-        BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(secs_between_fills) * (2 * (continuous_rate / 4. * half_year_cnt) / 5.) / secs_per_year)),
+        BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(secs_between_fills) * (2 * (continuous_rate / 4. * half_year_cnt) / 5.) / secs_per_year) * 0.85) + 2,
                             balance.get_amount() - initial_balance.get_amount());
         BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(secs_between_fills) * (3 * (continuous_rate / 4. * half_year_cnt) / 5.) / secs_per_year)) + 1,
                             ctb_balance.get_amount());
@@ -2171,7 +2174,7 @@ try
         // check balance of inflation
         BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(usecs_between_fills) * continuous_rate) / usecs_per_year),
                             supply.get_amount() - initial_supply.get_amount());
-        BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(usecs_between_fills) * (2 * (continuous_rate / 4. * half_year_cnt) / 5.) / usecs_per_year)) - 1,
+        BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(usecs_between_fills) * (2 * (continuous_rate / 4. * half_year_cnt) / 5.) / usecs_per_year) * 0.85) + 1,
                             balance.get_amount() - initial_balance.get_amount());
         BOOST_REQUIRE_EQUAL(static_cast<int64_t>((initial_supply.get_amount() * double(usecs_between_fills) * (3 * (continuous_rate / 4. * half_year_cnt) / 5.) / usecs_per_year)) + 2,
                             ctb_balance.get_amount() - initial_ctb_balance.get_amount());
@@ -2351,22 +2354,19 @@ try
         const int64_t expected_perblock_bucket = int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * (cont_rate / 4.) / 5. / usecs_per_year);
         const int64_t expected_pervote_bucket = int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * (cont_rate / 4.) / 5. / usecs_per_year);
 
-        const int64_t from_perblock_bucket = initial_unpaid_blocks * expected_perblock_bucket / initial_tot_unpaid_blocks;
-        const int64_t from_pervote_bucket = int64_t(vote_pay_i[prod_index] * expected_pervote_bucket);
+        const int64_t from_perblock_bucket = int64_t(initial_unpaid_blocks * expected_perblock_bucket / initial_tot_unpaid_blocks * 0.85);
+        const int64_t from_pervote_bucket = int64_t(vote_pay_i[prod_index] * expected_pervote_bucket * 0.85);
 
         BOOST_REQUIRE(1 >= abs(int32_t(initial_tot_unpaid_blocks - tot_unpaid_blocks) - int32_t(initial_unpaid_blocks - unpaid_blocks)));
 
-        if (from_pervote_bucket >= 100 * 10000)
+        // For remove minimum pay
+        // if (from_pervote_bucket >= 100 * 10000) 
+        // {
+        //     BOOST_REQUIRE(within_one(from_perblock_bucket + from_pervote_bucket, balance.get_amount() - initial_balance.get_amount()));
+        //     BOOST_REQUIRE(within_one(expected_pervote_bucket - from_pervote_bucket, pervote_bucket));
+        // }
         {
-            BOOST_REQUIRE(within_one(from_perblock_bucket + from_pervote_bucket, balance.get_amount() - initial_balance.get_amount()));
-            BOOST_REQUIRE(within_one(expected_pervote_bucket - from_pervote_bucket, pervote_bucket));
-        }
-        else
-        {
-            BOOST_REQUIRE(within_one(from_perblock_bucket, balance.get_amount() - initial_balance.get_amount()));
-            BOOST_REQUIRE(within_one(expected_pervote_bucket, pervote_bucket));
-            BOOST_REQUIRE(within_one(expected_pervote_bucket, vpay_balance.get_amount()));
-            BOOST_REQUIRE(within_one(perblock_bucket, bpay_balance.get_amount()));
+            BOOST_REQUIRE_EQUAL(from_perblock_bucket + from_pervote_bucket, balance.get_amount() - initial_balance.get_amount()- 1);
         }
 
         BOOST_REQUIRE_EQUAL(wasm_assert_msg("already claimed rewards within past day"),
@@ -2417,22 +2417,20 @@ try
         const int64_t expected_perblock_bucket = initial_perblock_bucket + int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * (cont_rate / 4.) / 5. / usecs_per_year);
         const int64_t expected_perctb_bucket = initial_perctb_bucket + int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * 3 * (cont_rate / 4.) / 5. / usecs_per_year);
 
-        const int64_t from_perblock_bucket = initial_unpaid_blocks * expected_perblock_bucket / initial_tot_unpaid_blocks;
-        const int64_t from_perctb_bucket = int64_t(service_pay_f[prod_index] * expected_perctb_bucket);
+        const int64_t from_perblock_bucket = int64_t(initial_unpaid_blocks * expected_perblock_bucket / initial_tot_unpaid_blocks * 0.85);
+        const int64_t from_perctb_bucket = int64_t(service_pay_f[prod_index] * expected_perctb_bucket * 0.85);
 
         BOOST_REQUIRE(1 >= abs(int32_t(initial_tot_unpaid_blocks - tot_unpaid_blocks) - int32_t(initial_unpaid_blocks - unpaid_blocks)));
 
-        if (from_perctb_bucket >= 100 * 10000)
+        // For remove minimum pay
+        // if (from_perctb_bucket >= 100 * 10000)
+        // {
+        //     BOOST_REQUIRE(within_one(from_perblock_bucket + from_perctb_bucket, balance.get_amount() - initial_balance.get_amount()));
+        //     BOOST_REQUIRE(within_one(expected_perctb_bucket - from_perctb_bucket, pervote_bucket));
+        // }
+        // else
         {
-            BOOST_REQUIRE(within_one(from_perblock_bucket + from_perctb_bucket, balance.get_amount() - initial_balance.get_amount()));
-            BOOST_REQUIRE(within_one(expected_perctb_bucket - from_perctb_bucket, pervote_bucket));
-        }
-        else
-        {
-            BOOST_REQUIRE(within_one(from_perblock_bucket, balance.get_amount() - initial_balance.get_amount()));
-            BOOST_REQUIRE(within_one(expected_perctb_bucket, perctb_bucket));
-            BOOST_REQUIRE(within_one(expected_perctb_bucket, cpay_balance.get_amount()));
-            BOOST_REQUIRE(within_one(perblock_bucket, bpay_balance.get_amount()));
+            BOOST_REQUIRE_EQUAL(from_perblock_bucket + from_perctb_bucket, balance.get_amount() - initial_balance.get_amount() - 2);
         }
 
         BOOST_REQUIRE_EQUAL(wasm_assert_msg("already claimed rewards within past day"),
@@ -2502,22 +2500,21 @@ try
         const int64_t expected_pervote_bucket = int64_t(double(initial_supply.get_amount()) * double(usecs_between_fills) * cont_rate / 4. / 5. / usecs_per_year) + initial_pervote_bucket;
         const int64_t expected_perctb_bucket = int64_t(double(initial_supply.get_amount()) * 3 * double(usecs_between_fills) * cont_rate / 4. / 5. / usecs_per_year) + initial_perctb_bucket;
 
-        const int64_t from_perblock_bucket = initial_unpaid_blocks * expected_perblock_bucket / initial_tot_unpaid_blocks;
-        const int64_t from_pervote_bucket = int64_t(vote_pay_i[prod_index] * expected_pervote_bucket);
+        const int64_t from_perblock_bucket = int64_t(initial_unpaid_blocks * expected_perblock_bucket / initial_tot_unpaid_blocks * 0.85);
+        const int64_t from_pervote_bucket = int64_t(vote_pay_i[prod_index] * expected_pervote_bucket * 0.85);
 
         BOOST_REQUIRE(1 >= abs(int32_t(initial_tot_unpaid_blocks - tot_unpaid_blocks) - int32_t(initial_unpaid_blocks - unpaid_blocks)));
         BOOST_REQUIRE(within_one(expected_perctb_bucket, perctb_bucket));
-        if (from_pervote_bucket >= 100 * 10000)
+
+        // For remove minimun pay
+        // if (from_pervote_bucket >= 100 * 10000)
+        // {
+        //     // BOOST_REQUIRE(within_one(from_perblock_bucket + from_pervote_bucket, balance.get_amount() - initial_balance.get_amount()));
+        //     // BOOST_REQUIRE(within_one(expected_pervote_bucket - from_pervote_bucket, pervote_bucket));
+        // }
+        // else
         {
-            BOOST_REQUIRE(within_one(from_perblock_bucket + from_pervote_bucket, balance.get_amount() - initial_balance.get_amount()));
-            BOOST_REQUIRE(within_one(expected_pervote_bucket - from_pervote_bucket, pervote_bucket));
-        }
-        else
-        {
-            BOOST_REQUIRE(within_one(from_perblock_bucket, balance.get_amount() - initial_balance.get_amount()));
-            BOOST_REQUIRE(within_one(expected_pervote_bucket, pervote_bucket));
-            BOOST_REQUIRE(within_one(expected_pervote_bucket, vpay_balance.get_amount()));
-            BOOST_REQUIRE(within_one(perblock_bucket, bpay_balance.get_amount()));
+            BOOST_REQUIRE_EQUAL(from_perblock_bucket + from_pervote_bucket, balance.get_amount() - initial_balance.get_amount()- 2);
         }
 
         produce_blocks(5);
@@ -2531,7 +2528,7 @@ try
         const auto prod_name = interiors_name[prod_index];
         BOOST_REQUIRE_EQUAL(success(),
                             push_action(prod_name, N(claimrewards), mvo()("owner", prod_name)));
-        BOOST_REQUIRE(100 * 10000 <= get_balance(prod_name).get_amount());
+        // BOOST_REQUIRE(100 * 10000 <= get_balance(prod_name).get_amount());
         BOOST_REQUIRE_EQUAL(wasm_assert_msg("already claimed rewards within past day"),
                             push_action(prod_name, N(claimrewards), mvo()("owner", prod_name)));
     }
