@@ -1159,7 +1159,7 @@ try
     auto amount = asset(1000000, symbol{CORE_SYMBOL});
 
     //user must stake before buyservice
-    BOOST_REQUIRE_EQUAL(wasm_assert_msg("user must stake before they can buy"), buyservice(N(alice.p), amount, acnt));
+    // BOOST_REQUIRE_EQUAL(wasm_assert_msg("user must stake before they can buy"), buyservice(N(alice.p), amount, acnt));
 
     //alice stake
     BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
@@ -1235,7 +1235,7 @@ try
     auto amount = asset(1000000, symbol{CORE_SYMBOL});
 
     //user must stake before buyservice
-    BOOST_REQUIRE_EQUAL(wasm_assert_msg("user must stake before they can buy"), buyledservice(N(alice.p), amount, acnt));
+    // BOOST_REQUIRE_EQUAL(wasm_assert_msg("user must stake before they can buy"), buyledservice(N(alice.p), amount, acnt));
 
     //alice stake
     BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
@@ -1315,7 +1315,7 @@ try
     auto amount = asset(1000000, symbol{CORE_SYMBOL});
 
     //user must stake before buyledsvcdom
-    BOOST_REQUIRE_EQUAL(wasm_assert_msg("user must stake before they can buy"), buyledsvcdom(N(alice.p), amount, acnt, provider));
+    // BOOST_REQUIRE_EQUAL(wasm_assert_msg("user must stake before they can buy"), buyledsvcdom(N(alice.p), amount, acnt, provider));
 
     //alice stake
     BOOST_REQUIRE_EQUAL(success(), stake("alice.p", core_sym::from_string("5.0000"), core_sym::from_string("5.0000")));
