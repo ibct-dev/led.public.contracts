@@ -595,6 +595,10 @@ namespace eosiosystem {
          [[eosio::action]]
          void updtrevision( uint8_t revision );
 
+         // Dummy action for deeplink
+         [[eosio::action]]
+         void testaction() { }
+
          using init_action = eosio::action_wrapper<"init"_n, &system_contract::init>;
          using activate_action = eosio::action_wrapper<"activate"_n, &system_contract::activate>;
          using deactivate_action = eosio::action_wrapper<"deactivate"_n, &system_contract::deactivate>;
@@ -631,6 +635,8 @@ namespace eosiosystem {
          using setpriv_action = eosio::action_wrapper<"setpriv"_n, &system_contract::setpriv>;
          using setalimits_action = eosio::action_wrapper<"setalimits"_n, &system_contract::setalimits>;
          using setparams_action = eosio::action_wrapper<"setparams"_n, &system_contract::setparams>;
+
+         using testaction_action = eosio::action_wrapper<"testaction"_n, &system_contract::testaction>;
 
       private:
          // Implementation details:
