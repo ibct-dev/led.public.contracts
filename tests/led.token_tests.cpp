@@ -60,54 +60,25 @@ class legis_token_tester : public tester {
         return data.empty() ? fc::variant() : abi_ser.binary_to_variant("account", data, abi_serializer_max_time);
     }
 
-    fc::variant get_nft(uint64_t id, const string& symbolname) {
-        auto symb = eosio::chain::symbol::from_string(symbolname);
-        auto symbol_code = symb.to_symbol_code().value;
-        vector<char> data = get_row_by_account(N(led.token), symbol_code, N(nft), id);
-        return data.empty() ? fc::variant() : abi_ser.binary_to_variant("nft", data, abi_serializer_max_time);
-    }
-
     action_result create(account_name issuer,
                          asset maximum_supply) {
         return push_action(N(led.token), N(create), mvo()("issuer", issuer)("maximum_supply", maximum_supply));
     }
     
-    action_result createnft(account_name issuer,
-                         const string& symbolname) {
-        
-        return push_action(N(led.token), N(createnft), mvo()("issuer", issuer)("sym", symbolname));
-    }
-
     action_result issue(account_name issuer, account_name to, asset quantity, string memo) {
         return push_action(issuer, N(issue), mvo()("to", to)("quantity", quantity)("memo", memo));
     }
     
-    action_result issuenft(account_name issuer, account_name to, asset quantity, vector<std::pair<uint64_t, name>> token_infos,string memo) {
-        return push_action(issuer, N(issuenft), mvo()("to", to)("quantity", quantity)("token_infos",token_infos)("memo", memo));
-    }
-
     action_result approve( const name& owner, const name& spender, const asset& quantity ){
          return push_action(owner, N(approve), mvo()("owner", owner)("spender", spender)("quantity", quantity));
-    }
-
-    action_result approvenft( const name& owner, const name& spender, const string& sym, uint64_t token_id ){
-         return push_action(owner, N(approvenft), mvo()("owner", owner)("spender", spender)("sym", sym)("token_id",token_id));
     }
 
     action_result burn(account_name owner, asset quantity, string memo) {
         return push_action(owner, N(burn), mvo()("owner", owner)("quantity", quantity)("memo", memo));
     }
     
-    action_result burnnft(account_name owner, asset quantity, const vector<uint64_t>& token_ids, string memo) {
-        return push_action(owner, N(burnnft), mvo()("owner", owner)("quantity", quantity)("token_ids",token_ids)("memo", memo));
-    }
-    
     action_result burnfrom(account_name burner, account_name owner, asset quantity, string memo) {
         return push_action(burner, N(burnfrom), mvo()("burner",burner)("owner", owner)("quantity", quantity)("memo", memo));
-    }
-
-    action_result burnnftfrom(account_name burner, const string& sym, uint64_t token_id, string memo) {
-        return push_action(burner, N(burnnftfrom), mvo()("burner",burner)("sym", sym)("token_id", token_id)("memo", memo));
     }
 
     action_result transfer(account_name from,
@@ -115,10 +86,6 @@ class legis_token_tester : public tester {
                            asset quantity,
                            string memo) {
         return push_action(from, N(transfer), mvo()("from", from)("to", to)("quantity", quantity)("memo", memo));
-    }
-    
-    action_result send( const name& from, const name& to, const string& sym, uint64_t token_id, const string& memo ) {
-        return push_action(from, N(send), mvo()("from", from)("to", to)("sym", sym)("token_id",token_id)("memo", memo));
     }
     
     action_result transferfrom(account_name spender,
@@ -129,22 +96,6 @@ class legis_token_tester : public tester {
         return push_action(spender, N(transferfrom), mvo()("spender",spender)("from", from)("to", to)("quantity", quantity)("memo", memo));
     }
     
-    action_result sendfrom( const name& spender, const name& to, const string& sym, uint64_t token_id, const string& memo ) {
-        return push_action(spender, N(sendfrom), mvo()("spender",spender)("to", to)("sym", sym)("token_id", token_id)("memo", memo));
-    }
-    
-    action_result auctiontoken( const name& auctioneer, const string& sym, uint64_t token_id, const asset& min_price, uint32_t sec ) {
-        return push_action(auctioneer, N(auctiontoken), mvo()("auctioneer",auctioneer)("sym", sym)("token_id", token_id)("min_price", min_price)("sec", sec));
-    }
-    
-    action_result bidtoken( const name& bidder, const string& sym, uint64_t token_id, const asset& bid ) {
-        return push_action(bidder, N(bidtoken), mvo()("bidder",bidder)("sym", sym)("token_id", token_id)("bid", bid));
-    }
-    
-    action_result claimtoken( const name& requester, const string& sym, uint64_t token_id ) {
-        return push_action(requester, N(claimtoken), mvo()("requester",requester)("sym", sym)("token_id", token_id));
-    }
-
     action_result incallowance( const name& owner, const asset& quantity ){
         return push_action(owner, N(incallowance), mvo()("owner",owner)("quantity", quantity));
     }
@@ -178,7 +129,7 @@ try {
 }
 FC_LOG_AND_RETHROW()
 
-BOOST_FIXTURE_TEST_CASE(create_negative_max_supply/* and_maximum_supply_must_nft */, legis_token_tester)
+BOOST_FIXTURE_TEST_CASE(create_negative_max_supply, legis_token_tester)
 try {
     BOOST_REQUIRE_EQUAL(wasm_assert_msg("max-supply must be positive"),
                         create(N(alice), asset::from_string("-1000.000 TKN")));
@@ -407,144 +358,6 @@ try {
     BOOST_REQUIRE_EQUAL(success(), decallowance(N(alice), asset::from_string("100 CERO")));
     
     BOOST_REQUIRE_EQUAL(wasm_assert_msg("there is not enough balance"), decallowance(N(alice), asset::from_string("100 CERO")));
-
-}
-FC_LOG_AND_RETHROW()
-
-BOOST_FIXTURE_TEST_CASE(create_nft_and_issue, legis_token_tester)
-try {
-    BOOST_REQUIRE_EQUAL(success(),createnft(N(alice),"CERO"));
-    produce_blocks(1);
-
-    vector<std::pair<uint64_t, account_name>> token_infos;
-    std::pair<uint64_t, account_name> info;
-    info.first = 0;
-    info.second = N(testa);
-    token_infos.emplace_back(info);
-
-    info.first = 1;
-    info.second = N(testb);
-    token_infos.emplace_back(info);
-    
-    info.first = 2;
-    info.second = N(testc);
-    token_infos.emplace_back(info);
-
-    info.first = 3;
-    info.second = N(testd);
-    token_infos.emplace_back(info);
-
-    info.first = 4;
-    info.second = N(teste);
-    token_infos.emplace_back(info);
-
-    BOOST_REQUIRE_EQUAL(success(),issuenft(N(alice), N(alice), asset::from_string("5 CERO"), token_infos, "hola"));
-    
-    BOOST_REQUIRE_EQUAL("testa", get_nft(0,"0,CERO")["tokenName"].get_string());
-    BOOST_REQUIRE_EQUAL("testb", get_nft(1,"0,CERO")["tokenName"].get_string());
-    BOOST_REQUIRE_EQUAL("testc", get_nft(2,"0,CERO")["tokenName"].get_string());
-    BOOST_REQUIRE_EQUAL("testd", get_nft(3,"0,CERO")["tokenName"].get_string());
-    BOOST_REQUIRE_EQUAL("teste", get_nft(4,"0,CERO")["tokenName"].get_string());
-}
-FC_LOG_AND_RETHROW()
-
-BOOST_FIXTURE_TEST_CASE(nft_approve_burnfrom_transferfrom_test, legis_token_tester)
-try {
-   BOOST_REQUIRE_EQUAL(success(),createnft(N(alice),"CERO"));
-    produce_blocks(1);
-
-    vector<std::pair<uint64_t, account_name>> token_infos;
-    std::pair<uint64_t, account_name> info;
-    info.first = 0;
-    info.second = N(testa);
-    token_infos.emplace_back(info);
-
-    info.first = 1;
-    info.second = N(testb);
-    token_infos.emplace_back(info);
-    
-    info.first = 2;
-    info.second = N(testc);
-    token_infos.emplace_back(info);
-
-    info.first = 3;
-    info.second = N(testd);
-    token_infos.emplace_back(info);
-
-    info.first = 4;
-    info.second = N(teste);
-    token_infos.emplace_back(info);
-
-    BOOST_REQUIRE_EQUAL(success(),issuenft(N(alice), N(alice), asset::from_string("5 CERO"), token_infos, "hola"));
-
-    // register allowance table 
-    BOOST_REQUIRE_EQUAL(success(), approvenft(N(alice), N(bob),"CERO",0));
-
-    BOOST_REQUIRE_EQUAL(success(), burnnft(N(alice), asset::from_string("1 CERO"), {2} ,"hola"));
-    
-    // already erase
-    BOOST_REQUIRE_EQUAL(wasm_assert_msg("token with symbol does not exists"), burnnft(N(alice), asset::from_string("1 CERO"), {2} ,"hola"));
-    
-    BOOST_REQUIRE_EQUAL(success(), burnnftfrom(N(bob), "CERO", {0} ,"hola"));
-
-    // already erase
-    BOOST_REQUIRE_EQUAL(wasm_assert_msg("token with symbol does not exists"), burnnft(N(alice), asset::from_string("1 CERO"), {0} ,"hola"));
-    
-    BOOST_REQUIRE_EQUAL(success(), approvenft(N(alice), N(bob),"CERO",1));
-
-    // change owner and spender to bob
-    BOOST_REQUIRE_EQUAL(success(), sendfrom(N(bob),N(bob),"CERO",1,"hola"));
-
-    BOOST_REQUIRE_EQUAL(wasm_assert_msg("spender and owner must be different"), sendfrom(N(bob),N(bob),"CERO",1,"hola"));
-
-    // change owner and spender to bob
-    BOOST_REQUIRE_EQUAL(success(), send(N(alice),N(bob),"CERO",3,"hola"));
-
-    BOOST_REQUIRE_EQUAL("bob", get_nft(3,"0,CERO")["owner"].get_string());
-
-}
-FC_LOG_AND_RETHROW()
-
-BOOST_FIXTURE_TEST_CASE(tokenauction_and_bidtoken, legis_token_tester)
-try {
-    // create token for biding
-    auto token = create(N(bob), asset::from_string("1000.000 TKN"));
-    produce_blocks(1);
-
-    BOOST_REQUIRE_EQUAL(success(), issue(N(bob), N(bob), asset::from_string("500.000 TKN"), "hola"));
-    
-    // create nft token
-    BOOST_REQUIRE_EQUAL(success(),createnft(N(alice),"CERO"));
-    produce_blocks(1);
-
-    vector<std::pair<uint64_t, account_name>> token_infos;
-    std::pair<uint64_t, account_name> info;
-    info.first = 0;
-    info.second = N(testa);
-    token_infos.emplace_back(info);
-
-    BOOST_REQUIRE_EQUAL(success(),issuenft(N(alice), N(alice), asset::from_string("1 CERO"), token_infos, "hola"));
-
-    // minimum price symbol must be in stat
-    BOOST_REQUIRE_EQUAL(wasm_assert_msg("minimum price symbol does not exist at stats"),auctiontoken(N(alice),"CERO",0,asset::from_string("100.000 TNK"), 3000));
-    
-    BOOST_REQUIRE_EQUAL(success(),auctiontoken(N(alice),"CERO",0,asset::from_string("100.000 TKN"), 3000));
-
-    BOOST_REQUIRE_EQUAL("led.token", get_nft(0,"0,CERO")["spender"].get_string());
-
-    BOOST_REQUIRE_EQUAL(wasm_assert_msg("the bid amount is insufficient"),bidtoken(N(bob),"CERO",0,asset::from_string("90.000 TKN")));
-    
-    BOOST_REQUIRE_EQUAL(wasm_assert_msg("the bid amount is insufficient"),bidtoken(N(bob),"CERO",0,asset::from_string("100.000 TKN")));
-    
-    BOOST_REQUIRE_EQUAL(success(),bidtoken(N(bob),"CERO",0,asset::from_string("101.000 TKN")));
-
-    BOOST_REQUIRE_EQUAL(wasm_assert_msg("deadline not over"),claimtoken(N(bob),"CERO",0));
-
-    produce_block(fc::seconds(3000));
-
-    BOOST_REQUIRE_EQUAL(success(),claimtoken(N(bob),"CERO",0));
-
-    BOOST_REQUIRE_EQUAL("bob", get_nft(0,"0,CERO")["owner"].get_string());
 
 }
 FC_LOG_AND_RETHROW()

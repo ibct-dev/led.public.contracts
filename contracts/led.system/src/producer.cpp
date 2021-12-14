@@ -55,7 +55,20 @@ namespace eosiosystem {
 
       _producers.modify( prod, producer, [&]( producer_info& info ){
          info.is_punished = false;
+         info.is_active = true;
       });
+
+      if(prod->producer_type == 1) {
+         auto fitr = _frontiers.find( producer.value );
+         _frontiers.modify( fitr, same_payer, [&]( frontier_info& info ) {
+            info.is_active = true;
+         });
+      } else {
+         auto iitr = _interiors.find( producer.value );
+         _interiors.modify( iitr, same_payer, [&]( interior_info& info ) {
+            info.is_active = true;
+         });
+      }
    }
 
    void system_contract::regfrontier( const name& frontier, const public_key& producer_key, const asset& transfer_ratio, uint8_t category, const std::string& url, uint16_t location, const std::string& logo_256 ) {
@@ -330,7 +343,15 @@ namespace eosiosystem {
       check( quantity.amount < 100000001, "must quantity below 10000 LED" );
 
       auto from_voter = _voters.find( buyer.value );
-      check( from_voter != _voters.end(), "user must stake before they can buy" ); /// staking creates voter object
+      if (from_voter == _voters.end()) {
+          from_voter = _voters.emplace(buyer, [&](auto& v) {
+              v.owner = buyer;
+              v.staked = 0;
+              v.last_stake = 0;
+          });
+      }
+      // check( from_voter != _voters.end(), "user must stake before they can
+      // buy" ); /// staking creates voter object
 
       accounts fromBuyer(token_account, buyer.value);
       const auto& bn = fromBuyer.get( core_symbol().code().raw(), "buyer does not have a core symbol" );
@@ -409,8 +430,16 @@ namespace eosiosystem {
       check( quantity.symbol.code() == core_symbol().code(), "this token is not system token" );
       check( quantity.amount > 0, "must positive quantity" );
 
-      auto from_voter = _voters.find( buyer.value );
-      check( from_voter != _voters.end(), "user must stake before they can buy" ); /// staking creates voter object
+      auto from_voter = _voters.find(buyer.value);
+      if (from_voter == _voters.end()) {
+          from_voter = _voters.emplace(buyer, [&](auto& v) {
+              v.owner = buyer;
+              v.staked = 0;
+              v.last_stake = 0;
+          });
+      }
+      // check( from_voter != _voters.end(), "user must stake before they can
+      // buy" ); /// staking creates voter object
 
       accounts fromBuyer(token_account, buyer.value);
       const auto& bn = fromBuyer.get( core_symbol().code().raw(), "buyer does not have a core symbol" );
@@ -466,7 +495,14 @@ namespace eosiosystem {
       check( quantity.amount > 0, "must positive quantity" );
 
       auto from_voter = _voters.find( buyer.value );
-      check( from_voter != _voters.end(), "user must stake before they can buy" ); /// staking creates voter object
+      if (from_voter == _voters.end()) {
+          from_voter = _voters.emplace(buyer, [&](auto& v) {
+              v.owner = buyer;
+              v.staked = 0;
+              v.last_stake = 0;
+          });
+      }
+      // check( from_voter != _voters.end(), "user must stake before they can buy" ); /// staking creates voter object
 
       accounts fromBuyer(token_account, buyer.value);
       const auto& bn = fromBuyer.get( core_symbol().code().raw(), "buyer does not have a core symbol" );
