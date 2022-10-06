@@ -233,7 +233,7 @@ namespace eosiosystem {
       }
    }
 
-   void system_contract::unregproducer( const name& producer ) {
+   void system_contract::unreg_producer( const name& producer ) {
       require_auth( producer );
 
       const auto& prod = _producers.get( producer.value, "producer not found" );
