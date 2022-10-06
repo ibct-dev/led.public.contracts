@@ -233,6 +233,28 @@ namespace eosiosystem {
       }
    }
 
+   void system_contract::eraseprod( const name& producer ) {
+      require_auth( producer );
+
+      const auto& prod = _producers.get( producer.value, "producer not found" );
+     
+      auto itr = _producers.find( producer.value );
+      if ( itr == _producers.end() ) {
+         printf("Producer does not exist in table, nothing to delete");
+         return;
+      }
+      _producers.erase( itr );
+
+      if(prod.producer_type == 1) {
+         auto fitr = _frontiers.find( producer.value );
+         _frontiers.erase(fitr);
+      } else {
+         auto iitr = _interiors.find( producer.value );
+         _interiors.erase(iitr);
+      }
+   }
+
+
    void system_contract::update_elected_producers( const block_timestamp& block_time ) {
       bool isclear = false;
       _gstate.last_producer_schedule_update = block_time;

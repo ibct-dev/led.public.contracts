@@ -554,6 +554,9 @@ namespace eosiosystem {
          void unregprod( const name& producer );
 
          [[eosio::action]]
+         void eraseprod( const name& producer );
+
+         [[eosio::action]]
          void changeratio( const name& frontier, const asset& transfer_ratio );
 
          [[eosio::action]]
