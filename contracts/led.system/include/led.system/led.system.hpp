@@ -554,7 +554,7 @@ namespace eosiosystem {
          void unregprod( const name& producer );
 
          [[eosio::action]]
-         void unregproducer( const name& producer );
+         void unregproduce( const name& producer );
 
          [[eosio::action]]
          void changeratio( const name& frontier, const asset& transfer_ratio );
@@ -621,7 +621,7 @@ namespace eosiosystem {
          using reginterior_action = eosio::action_wrapper<"reginterior"_n, &system_contract::reginterior>;
          using changeratio_action = eosio::action_wrapper<"changeratio"_n, &system_contract::changeratio>;
          using unregprod_action = eosio::action_wrapper<"unregprod"_n, &system_contract::unregprod>;
-         using unregproducer_action = eosio::action_wrapper<"unregproducer"_n, &system_contract::unregproducer>;
+         using unregproduce_action = eosio::action_wrapper<"unregproduce"_n, &system_contract::unregproduce>;
          using buyservice_action = eosio::action_wrapper<"buyservice"_n, &system_contract::buyservice>;
          using buyledservice_action = eosio::action_wrapper<"buyledservice"_n, &system_contract::buyledservice>;
          using buyledsvcdom_action = eosio::action_wrapper<"buyledsvcdom"_n, &system_contract::buyledsvcdom>;
