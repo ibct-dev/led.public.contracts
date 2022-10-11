@@ -226,8 +226,7 @@ namespace eosiosystem {
             info.is_active = false;
          });
       } else {
-         auto iitr = _interioyarn startpwd
-         rs.find( producer.value );
+         auto iitr = _interiors.find( producer.value );
          _interiors.modify( iitr, same_payer, [&]( interior_info& info ) {
             info.is_active = false;
          });
@@ -235,7 +234,6 @@ namespace eosiosystem {
    }
 
    void system_contract::unregproduce( const name& producer ) {
-
       require_auth( producer );
 
       const auto& prod = _producers.get( producer.value, "producer not found" );
