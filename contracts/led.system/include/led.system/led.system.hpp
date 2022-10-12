@@ -165,7 +165,7 @@ namespace eosiosystem {
       uint64_t primary_key()const { return owner.value;                             }
 
       EOSLIB_SERIALIZE( producer_info2, (owner)(votepay_share)(last_votepay_share_update))
-   }
+   };
 
    struct [[eosio::table, eosio::contract("led.system")]]  {
       name                    owner;
