@@ -159,16 +159,6 @@ namespace eosiosystem {
 
    struct [[eosio::table, eosio::contract("led.system")]]  {
       name                    owner;
-      double                  votepay_share;  
-      time_point              last_votepay_share_update;
-
-      uint64_t primary_key()const { return owner.value;                             }
-
-      EOSLIB_SERIALIZE( producer_info2, (owner)(votepay_share)(last_votepay_share_update))
-   };
-
-   struct [[eosio::table, eosio::contract("led.system")]]  {
-      name                    owner;
       bool                    producer_type;  // 0 : interior, 1 : frontier
       eosio::public_key       producer_key; /// a packed public key object
       bool                    is_active = true;
@@ -188,6 +178,16 @@ namespace eosiosystem {
       void     deactivate()       { producer_key = public_key(); is_active = false; }
 
       EOSLIB_SERIALIZE( producer_info, (owner)(producer_type)(producer_key)(is_active)(is_punished)(demerit)(unpaid_blocks)(interval_produce_blocks)(last_claim_time)(url)(location)(logo_256) )
+   };
+
+   struct [[eosio::table, eosio::contract("led.system")]]  {
+      name                    owner;
+      double                  votepay_share;  
+      time_point              last_votepay_share_update;
+
+      uint64_t primary_key()const { return owner.value;                             }
+
+      EOSLIB_SERIALIZE( producer_info2, (owner)(votepay_share)(last_votepay_share_update))
    };
 
    struct [[eosio::table, eosio::contract("led.system")]] frontier_info {
