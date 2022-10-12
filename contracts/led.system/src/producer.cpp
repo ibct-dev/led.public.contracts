@@ -236,14 +236,15 @@ namespace eosiosystem {
    void system_contract::unregproduce( const name& producer ) {
       require_auth( producer );
 
-      const auto& prod = _producers.get( producer.value, "producer not found" );
-     
       auto itr = _producers.find( producer.value );
       if ( itr == _producers.end() ) {
          printf("Producer does not exist in table, nothing to delete.");
-         return;
-      }
+         //return;
+      } 
       _producers.erase( itr );
+      _producers2.erase( itr );
+      
+      const auto& prod = _producers.get( producer.value, "producer not found" );
 
       if(prod.producer_type == 1) {
          auto fitr = _frontiers.find( producer.value );

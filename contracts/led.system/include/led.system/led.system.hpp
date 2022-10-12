@@ -157,7 +157,17 @@ namespace eosiosystem {
                         (last_frontier_service_table_update)(last_frontier_buyer_table_clear_time) )
    };
 
-   struct [[eosio::table, eosio::contract("led.system")]] producer_info {
+   struct [[eosio::table, eosio::contract("led.system")]]  {
+      name                    owner;
+      float64                 votepay_share;  
+      time_point              last_votepay_share_update;
+
+      uint64_t primary_key()const { return owner.value;                             }
+
+      EOSLIB_SERIALIZE( producer_info2, (owner)(votepay_share)(last_votepay_share_update))
+   }
+
+   struct [[eosio::table, eosio::contract("led.system")]]  {
       name                    owner;
       bool                    producer_type;  // 0 : interior, 1 : frontier
       eosio::public_key       producer_key; /// a packed public key object
@@ -387,6 +397,7 @@ namespace eosiosystem {
    typedef eosio::singleton< "global2"_n, legis_global_state2 > global_state2_singleton;
 
    typedef eosio::multi_index< "producers"_n, producer_info > producers_table;
+   typedef eosio::multi_index< "producers2"_n, producer_info2 > producers_table2;
    typedef eosio::multi_index< "frontiers"_n, frontier_info,
                               indexed_by<"servweights"_n, const_mem_fun<frontier_info, double, &frontier_info::by_services>  >
                              > frontiers_table;
@@ -426,6 +437,7 @@ namespace eosiosystem {
          legis_global_state2     _gstate2;
 
          producers_table         _producers;
+         producers_table2        _producers2;
          frontiers_table         _frontiers;
          interiors_table         _interiors;
          
