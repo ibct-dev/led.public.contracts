@@ -397,6 +397,7 @@ namespace eosiosystem {
    typedef eosio::singleton< "global2"_n, legis_global_state2 > global_state2_singleton;
 
    typedef eosio::multi_index< "producers"_n, producer_info > producers_table;
+   typedef eosio::multi_index< "producers2"_n, producer_info2 > producers2_table;
    typedef eosio::multi_index< "frontiers"_n, frontier_info,
                               indexed_by<"servweights"_n, const_mem_fun<frontier_info, double, &frontier_info::by_services>  >
                              > frontiers_table;
@@ -436,6 +437,7 @@ namespace eosiosystem {
          legis_global_state2     _gstate2;
 
          producers_table         _producers;
+         producers2_table        _producers2;
          frontiers_table         _frontiers;
          interiors_table         _interiors;
          
