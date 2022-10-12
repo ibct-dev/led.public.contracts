@@ -15,6 +15,7 @@ namespace eosiosystem {
     _global(get_self(), get_self().value),
     _global2(get_self(), get_self().value),
     _producers(get_self(), get_self().value),
+    _producers2(get_self(), get_self().value),
     _frontiers(get_self(), get_self().value),
     _interiors(get_self(), get_self().value),
     _buyers(get_self(), get_self().value),
