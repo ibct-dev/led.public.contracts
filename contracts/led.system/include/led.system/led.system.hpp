@@ -159,7 +159,7 @@ namespace eosiosystem {
 
    struct [[eosio::table, eosio::contract("led.system")]]  {
       name                    owner;
-      float64                 votepay_share;  
+      double                  votepay_share;  
       time_point              last_votepay_share_update;
 
       uint64_t primary_key()const { return owner.value;                             }
