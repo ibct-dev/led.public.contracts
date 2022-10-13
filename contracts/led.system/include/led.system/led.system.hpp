@@ -106,7 +106,7 @@ namespace eosiosystem {
       block_timestamp      last_ram_increase;
 
       block_timestamp      last_producer_size_update;
-      uint32_t             maximum_producers = 3;
+      uint32_t             maximum_producers = 21; //3;
       uint32_t             half_year_cnt = 0;
 
       block_timestamp      last_producer_schedule_update;
