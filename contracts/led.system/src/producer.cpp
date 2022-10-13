@@ -22,7 +22,8 @@ namespace eosiosystem {
    using eosio::token;
 
    void system_contract::punishprod( const name& producer ) {
-      require_auth( "ibct"_n );
+      //require_auth( "ibct"_n );
+      require_auth( producer );
 
       auto prod = _producers.find( producer.value );
       check( prod != _producers.end(), "target producer is not exist" );
@@ -46,7 +47,8 @@ namespace eosiosystem {
    }
 
    void system_contract::punishoff( const name& producer ) {
-      require_auth( "ibct"_n );
+      // require_auth( "ibct"_n );
+      require_auth( producer );
 
       auto prod = _producers.find( producer.value );
       check( prod != _producers.end(), "producer does not exist" );
