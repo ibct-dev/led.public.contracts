@@ -241,16 +241,16 @@ namespace eosiosystem {
       auto itr = _producers.find( producer.value );
       if ( itr == _producers.end() ) {
          printf("Producer does not exist in table, nothing to delete.");
-         //return;
+         return;
       } 
       _producers.erase( itr );
 
-      auto itr2 = _producers2.find( producer.value );
-      if ( itr2 == _producers2.end() ) {
-         printf("Producer2 does not exist in table, nothing to delete.");
-         //return;
-      } 
-      _producers2.erase( itr2 );
+      // auto itr2 = _producers2.find( producer.value );
+      // if ( itr2 == _producers2.end() ) {
+      //    printf("Producer2 does not exist in table, nothing to delete.");
+      //    //return;
+      // } 
+      // _producers2.erase( itr2 );
       
       const auto& prod = _producers.get( producer.value, "producer not found" );
 
