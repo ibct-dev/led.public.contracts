@@ -238,22 +238,19 @@ namespace eosiosystem {
    void system_contract::unregproduce( const name& producer ) {
       require_auth( producer );
 
+      const auto& prod = _producers.get( producer.value, "producer not found" );  
       auto itr = _producers.find( producer.value );
       if ( itr == _producers.end() ) {
          printf("Producer does not exist in table, nothing to delete.");
          return;
       } 
-      _producers.erase( itr );
-
       // auto itr2 = _producers2.find( producer.value );
       // if ( itr2 == _producers2.end() ) {
       //    printf("Producer2 does not exist in table, nothing to delete.");
       //    //return;
       // } 
       // _producers2.erase( itr2 );
-      
-      const auto& prod = _producers.get( producer.value, "producer not found" );
-
+   
       if(prod.producer_type == 1) {
          auto fitr = _frontiers.find( producer.value );
          _frontiers.erase(fitr);
@@ -261,6 +258,8 @@ namespace eosiosystem {
          auto iitr = _interiors.find( producer.value );
          _interiors.erase(iitr);
       }
+
+      _producers.erase( itr );
    }
 
 
