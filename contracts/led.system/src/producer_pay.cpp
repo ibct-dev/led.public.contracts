@@ -36,6 +36,7 @@ namespace eosiosystem {
    }
 
    void system_contract::onblock( ignore<block_header> ) {
+      printf("[producer_pay] onblock start");
       using namespace eosio;
 
       require_auth(get_self());
@@ -53,6 +54,8 @@ namespace eosiosystem {
       /** until activated no new rewards are paid */
       if( !_gstate.activated )
          return;
+
+      printf("[producer_pay] onblock ing");   
 
       if( _gstate.last_bucket_fill == time_point() )  /// start the presses
          _gstate.last_bucket_fill = current_time_point();
@@ -86,6 +89,8 @@ namespace eosiosystem {
       if( timestamp.slot - _gstate.last_producer_schedule_update.slot > 120 ) {
          update_elected_producers( timestamp );
       }
+
+      printf("[producer_pay] onblock end");   
    }
 
    using namespace eosio;
